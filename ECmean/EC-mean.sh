@@ -26,9 +26,8 @@ year2=$3
 # load cdo, netcdf and dir for results
 . $ECE3_POSTPROC_TOPDIR/conf/conf_ecmean_${ECE3_POSTPROC_MACHINE}.sh
 
-if [ $# -eq 4 ]; then           # optional alternative top rundir 
-   ALT_RUNDIR=$4
-fi
+# optional alternative top rundir 
+[ $# -eq 4 ] && ALT_RUNDIR=$4 || ALT_RUNDIR=""
 
 ############################################################
 # HARDCODED OPTIONS
@@ -40,10 +39,8 @@ fi
 ############################################################
 
 # Where to store the 2x2 climatologies
-export CLIMDIR=$(mktemp -d) # $SCRATCH/tmp_ecearth3/post_${exp}_model2x2_XXXXXX)
-mkdir -p $CLIMDIR || true
-
-TMPDIR=$(mktemp -d) # $SCRATCH/tmp_ecearth3.XXXXXX)
+export CLIMDIR=$(mktemp -d $SCRATCH/tmp_ecearth3/post_ecm_clim_XXXXXX)
+export TMPDIR=$(mktemp -d $SCRATCH/tmp_ecearth3/post_ecm_tmp_XXXXXX)
 
 ############################################################
 # Checking settings dependent only on the ECE3_POSTPROC_* variables, i.e. env
@@ -69,7 +66,7 @@ export do_ocean
 # -- mask files
 
 # first, find IFS horizontal resolution from one of the processed output
-fname=$(ls -1 $DATADIR/Post_$year1/*t.nc | tail -1)
+fname=$(ls -1 $DATADIR/Post_$year1/*tas.nc | tail -1)
 res=$(cdo griddes $fname | sed -rn "s/ysize.*= ([0-9]+)/\1/p")
 (( res-=1 ))
 
@@ -89,32 +86,43 @@ cd $PIDIR/scripts/
 printf " ----------------------------------- Post 2x2\n"
 ./post2x2.sh $exp $year1 $year2
 
+if  (( do_3d_vars ))
+then
+
 printf "\n\n ----------------------------------- old PI2\n"
 ./oldPI2.sh $exp $year1 $year2
 
 printf "\n\n----------------------------------- PI3\n"
 ./PI3.sh $exp $year1 $year2
 
-printf "\n\n----------------------------------- Global Mean\n"
-./global_mean.sh $exp $year1 $year2
-
 # Rearranging in a single table the PI from the old and the new versions
 cat $OUTDIR/PIold_RK08_${exp}_${year1}_${year2}.txt $OUTDIR/PI2_RK08_${exp}_${year1}_${year2}.txt > $TMPDIR/out.txt
 rm $OUTDIR/PI2_RK08_${exp}_${year1}_${year2}.txt $OUTDIR/PIold_RK08_${exp}_${year1}_${year2}.txt
 mv $TMPDIR/out.txt $OUTDIR/PI2_RK08_${exp}_${year1}_${year2}.txt 
-#not needed rm -rf $TMPDIR
-#not needed  
-#not needed # Deleting the 2x2 climatology to save space
-#not needed rm $CLIMDIR/*.nc
-#not needed rmdir $CLIMDIR
+
+fi #do_3d_vars
+
+printf "\n\n----------------------------------- Global Mean\n"
+./global_mean.sh $exp $year1 $year2
+
+# Deleting the 2x2 climatology to save space
+rm -rf $TMPDIR $CLIMDIR
 
 cd $OUTDIR/..
+
+# produce tables
+# do we need to produce globtable_cs.txt file since we can import globtable.txt into excel anyway?
+[[ ! -e globtable.txt ]] && \
+    echo "                | TOAnet SW | TOAnet LW | Net TOA | Sfc Net SW | Sfc Net LW | SH Fl. | LH Fl. | SWCF | LWCF | NetSfc* | TOA-SFC | t2m | TCC | LCC | MCC | HCC | TP | P-E |" >> globtable.txt
+[[ ! -e globtable_cs.txt ]] && \
+    echo '"               " "TOAnet SW" "TOAnet LW" "Net TOA" "Sfc Net SW" "Sfc Net LW" "SH Fl." "LH Fl." "SWCF" "LWCF" "NetSfc*" "TOA-SFC" "t2m" "TCC" "LCC" "MCC" "HCC" "TP" "P-E"' >> globtable_cs.txt
+cat globtable.txt globtable_cs.txt
+
 touch globtable.txt globtable_cs.txt
 $PIDIR/tab2lin_cs.sh $exp $year1 $year2 >> ./globtable_cs.txt
 $PIDIR/tab2lin.sh $exp $year1 $year2 >> ./globtable.txt
-
 [[ ! -e gregory.txt ]] && \
-    cat "                  net TOA, net Sfc, t2m[tas], SST" >> gregory.txt
+    echo "                  net TOA, net Sfc, t2m[tas], SST" >> gregory.txt
 $PIDIR/gregory.sh $exp $year1 $year2 >> ./gregory.txt
 
 

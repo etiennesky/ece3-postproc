@@ -67,7 +67,7 @@ fi
 
 
 # -- submit script
-tgt_script=$OUT/ecm_$1_$2_$3.job
+tgt_script=$OUT/ecm2_$1_$2_$3.job
 
 sed "s/<EXPID>/$1/" < $ECE3_POSTPROC_TOPDIR/script/platform/header_$ECE3_POSTPROC_MACHINE.tmpl > $tgt_script
 
@@ -79,7 +79,9 @@ sed -i "s/<JOBID>/ecm/" $tgt_script
 sed -i "s/<Y1>/$2/" $tgt_script
 sed -i "s|<OUT>|$OUT|" $tgt_script
 
-echo ./EC-mean.sh $1 $2 $3 $ALT_RUNDIR >> $tgt_script
+for y in `seq $2 1 $3` ; do
+echo ./EC-mean.sh $1 $y $y $ALT_RUNDIR >> $tgt_script
+done
 
 echo $tgt_script
 qsub $tgt_script

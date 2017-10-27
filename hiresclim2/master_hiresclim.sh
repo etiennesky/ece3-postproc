@@ -64,6 +64,7 @@ export monthly_leg
 # monthly flag for standard hiresclim
 # daily and 6hrs flag for u,v,t,z 3d field + tas,totp extraction
 ifs_monthly=1
+ifs_monthly_prim=0
 ifs_daily=0
 ifs_6hrs=0
 
@@ -144,6 +145,10 @@ cd $PROGDIR/script
         . ./ifs_monthly.sh $expname $year $yref
     fi
 
+    if [ $ifs_monthly_prim == 1 ] ; then 
+        . ./ifs_monthly_prim.sh $expname $year $yref
+    fi
+
     if [ $ifs_daily == 1 ] ; then
         . ./ifs_daily.sh $expname $year
     fi
@@ -170,7 +175,7 @@ cd $PROGDIR/script
         mkdir -p $INFODIR
         echo "$expname for $year has been postprocessed successfully" > $INFODIR/postcheck_${expname}_${year}.txt
         echo "Postprocessing lasted for $runtime sec (or $hh hrs)" >> $INFODIR/postcheck_${expname}_${year}.txt
-        echo "Configuration: MON: $ifs_monthly ; DAY: $ifs_daily ; 6HRS: $ifs_6hrs; CDX: $ifs_3hrs_cdx ; SMON: $ifs_smon ; NONLIN: $ifs_nonlinear"  >> $INFODIR/postcheck_${expname}_${year}.txt
+        echo "Configuration: MON: $ifs_monthly ; DAY: $ifs_daily ; 6HRS: $ifs_6hrs ; PRIM: $ifs_monthly_prim"  >> $INFODIR/postcheck_${expname}_${year}.txt
                 echo $(date) >> $INFODIR/postcheck_${expname}_${year}.txt
     fi
 
