@@ -33,7 +33,8 @@ while getopts "h?cr:a:m" opt; do
             ;;
         m)  options=${options}" -m"
             ;;
-        r)  ALT_RUNDIR=${options}" -r $OPTARG"
+        r)  options=${options}" -r $OPTARG"
+            ALT_RUNDIR="$OPTARG"
             ;;
         c)  checkit=1
             ;;
@@ -53,13 +54,16 @@ fi
 [[ -z $ECE3_POSTPROC_RUNDIR  ]] && echo "User environment not set. See ../README." && exit 1 
 [[ -z $ECE3_POSTPROC_MACHINE ]] && echo "User environment not set. See ../README." && exit 1 
 
+. $ECE3_POSTPROC_TOPDIR/conf/conf_hiresclim_${ECE3_POSTPROC_MACHINE}.sh
+
 if [[ -n $ALT_RUNDIR ]]
 then
     outdir=$ALT_RUNDIR/$1/output
 else
     outdir=${ECE3_POSTPROC_RUNDIR}/$1/output
 fi
-[[ ! -d $outdir ]] && echo "User experiment output $outdir does not exist!" && exit1
+[[ ! -d $outdir ]] && echo "User experiment output $outdir does not exist!" && exit 1
+
 
 # -- check previous processing
 if (( checkit ))
@@ -74,9 +78,9 @@ then
 fi
 
 
-# -- Scratch dir (location of submit script and its log)
+# -- Scratch dir (location of submit script and its log, and temporary files)
 OUT=$SCRATCH/tmp_ecearth3
-mkdir -p $OUT
+mkdir -p $OUT/log
 
 # -- Write and submit one script per year
 for YEAR in $(eval echo {$2..$3})
@@ -92,7 +96,5 @@ do
     sed -i "s|<YREF>|$4|" $tgt_script
     sed -i "s|<OUT>|$OUT|" $tgt_script
     sed -i "s|<OPTIONS>|${options}|" $tgt_script
-    qsub $tgt_script
+    ${submit_cmd} $tgt_script
 done
-
-qstat -wu $USER

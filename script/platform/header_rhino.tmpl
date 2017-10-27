@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+#SBATCH --job-name=<JOBID>_<EXPID>_<Y1>
+#SBATCH --partition=all
+#SBATCH --nodes=1
+#SBATCH --share
+#SBATCH --output=<OUT>/log/<JOBID>_<EXPID>_<Y1>.out
+
+set -e
+
+cd $ECE3_POSTPROC_TOPDIR/script
+
