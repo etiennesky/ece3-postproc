@@ -28,7 +28,7 @@ do_trans=0
 # Base directory of HiresClim2 postprocessing outputs
 if [[ -n $ALT_RUNDIR ]]
 then
-    export DATADIR=$ALT_RUNDIR/${exp}/post/mon/
+    export DATADIR=$ALT_RUNDIR/post/mon/
 else
     export DATADIR="${ECE3_POSTPROC_RUNDIR}/${exp}/post/mon/"
 fi

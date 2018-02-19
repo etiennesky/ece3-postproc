@@ -76,6 +76,12 @@ nemo=1
 # NEMO extra-fields; extra-fields require NCO
 nemo_extra=0
 
+# override default options with env. vars
+[[ -z ${ECE3_POSTPROC_HC_IFS_MONTHLY:-} ]] || ifs_monthly=${ECE3_POSTPROC_HC_IFS_MONTHLY}
+[[ -z ${ECE3_POSTPROC_HC_IFS_MONTHLY_MMA:-} ]] || ifs_monthly_mma=${ECE3_POSTPROC_HC_IFS_MONTHLY_MMA}
+[[ -z ${ECE3_POSTPROC_HC_NEMO:-} ]] || nemo=${ECE3_POSTPROC_HC_NEMO}
+[[ -z ${ECE3_POSTPROC_HC_NEMO_EXTRA:-} ]] || nemo=${ECE3_POSTPROC_HC_NEMO_EXTRA}
+
 # copy monthly results in a second folder
 store=0
 
@@ -95,14 +101,15 @@ export ecearth_table=$PROGDIR/script/ecearth.tab
 # where to find the results from the EC-EARTH experiment
 if [[ -n $ALT_RUNDIR ]]
 then
-    export BASERESULTS=$ALT_RUNDIR/$expname/output
+    export BASERESULTS=${ALT_RUNDIR}/output
+    export OUTDIR0=${ALT_RUNDIR}/post
 else
     export BASERESULTS=${ECE3_POSTPROC_RUNDIR}/$expname/output
+    export OUTDIR0=${ECE3_POSTPROC_RUNDIR}/$expname/post
 fi
+
 [[ ! -d $BASERESULTS ]] && echo "*EE* Experiment output dir $BASERESULTS does not exist!" && exit 1
 
-# where to produce the results
-export OUTDIR0=${ECE3_POSTPROC_RUNDIR}/$expname/post
 mkdir -p $OUTDIR0
 
 ############################################################
