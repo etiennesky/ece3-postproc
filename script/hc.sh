@@ -14,6 +14,8 @@ usage()
    echo "Options are:"
    echo "   -a ACCOUNT  : specify a different special project for accounting (default: ${ECE3_POSTPROC_ACCOUNT:-unknown})"
    echo "   -c          : check for success"
+   echo "   -d depend   : add dependency to the job being submitted"
+   echo "   -6          : use if EC-Earth run with CMIP6 ctrl output (requires implementation in your config file - see cca example)" 
    echo "   -u USERexp  : alternative user owner of the experiment, default $USER"
    echo "   -m months_per_leg : run was performed with months_per_leg legs (yearly legs expected by default)"
    echo "   -n numprocs       : set number of processors to use (default is 12)"
@@ -26,19 +28,24 @@ account="${ECE3_POSTPROC_ACCOUNT-}"
 checkit=0
 options=""
 nprocs=12
+dependency=
 
 # -- options
-while getopts "hcu:a:m:n:" opt; do
+while getopts "hc6d:u:a:m:n:" opt; do
     case "$opt" in
         h)
             usage
             exit 0
+            ;;
+        d)  dependency=$OPTARG
             ;;
         n)  nprocs=$OPTARG
             ;;
         m)  options=${options}" -m $OPTARG"
             ;;
         u)  options=${options}" -u $OPTARG"
+            ;;
+        6)  options=${options}" -6"
             ;;
         c)  checkit=1
             ;;
@@ -94,6 +101,10 @@ do
         sed -i "s/<ACCOUNT>/$account/" $tgt_script || \
         sed -i "/<ACCOUNT>/ d" $tgt_script
 
+    [[ -n $dependency ]] && \
+        sed -i "s/<DEPENDENCY>/$dependency/" $tgt_script || \
+        sed -i "/<DEPENDENCY>/ d" $tgt_script
+
     # -- number of processors to use, default 12
     sed -i "s/<NPROCS>/$nprocs/" $tgt_script
 
@@ -102,4 +113,7 @@ do
     sed -i "s|<OUT>|$OUT|" $tgt_script
     sed -i "s|<OPTIONS>|${options}|" $tgt_script
     ${submit_cmd} $tgt_script
+    
+    # -- book keeping (experimental: eventually should not be on $SCRATCH)
+    echo $YEAR >> $OUT/log/submitted_hc_$1
 done

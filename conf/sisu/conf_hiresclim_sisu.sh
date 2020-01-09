@@ -1,28 +1,23 @@
 #!/bin/bash
 
-set -xuve 
-
  ######################################
  # Configuration file for HIRESCLIM2  #
  ######################################
 
-# For autosubmit these variables must be set elsewhere (in the calling script or .bashrc)
-# IFSRESULTS0 NEMORESULTS0 ECE3_POSTPROC_POSTDIR
-
 # --- PATTERN TO FIND MODEL OUTPUT
 # 
-# Must include ${EXPID} and be single-quoted
+# Must include $EXPID and be single-quoted
 #
-# optional variables: $USER, $LEGNB, $year
-[[ -z ${IFSRESULTS0:-} ]] && export IFSRESULTS0='$SCRATCH/ECEARTH-RUNS/${EXPID}/output/ifs/${LEGNB}'
-[[ -z ${NEMORESULTS0:-} ]] && export NEMORESULTS0='$SCRATCH/ECEARTH-RUNS/${EXPID}/output/nemo/${LEGNB}'
+# optional variable are $USER, $LEGNB, $year
+#
+export IFSRESULTS0='/wrk/${USER}/ece-3.2.3-r/classic/${EXPID}/output/ifs/${LEGNB}'
+export NEMORESULTS0='/wrk/${USER}/ece-3.2.3-r/classic/${EXPID}/output/nemo/${LEGNB}'
 
 # --- PATTERN TO DEFINE WHERE TO SAVE POST-PROCESSED DATA
 # 
-# Must include ${EXPID} and be single-quoted
+# Should include ${EXPID} and be single-quoted
 #
-[[ -z ${ECE3_POSTPROC_POSTDIR:-} ]] && export ECE3_POSTPROC_POSTDIR='$SCRATCH/ECEARTH-RUNS/${EXPID}/post'
-
+export ECE3_POSTPROC_POSTDIR='/wrk/${USER}/ece-3.2.3-r/classic/post/${EXPID}'
 # --- PROCESSING TO PERFORM (uncomment to change default)
 # ECE3_POSTPROC_HC_IFS_MONTHLY=1
 # ECE3_POSTPROC_HC_IFS_MONTHLY_MMA=0
@@ -48,45 +43,41 @@ then
 fi
 
 # --- TOOLS (required programs, including compression options) -----
+# Load python environment
+module load python
 
 submit_cmd="sbatch"
-#submit_cmd="bash"
 
-# required programs, including compression options
-module purge
-module load intel/2017.4 impi/2017.4 mkl/2017.4
-module load gsl grib netcdf hdf5 CDO/1.8.2 udunits nco python/2.7.13
-module list
-export CDFTOOLS_DIR=/gpfs/projects/bsc32/opt/cdftools-3.0.1/intel-2017.4
+export cdo="$USERAPPL/bioconda_env/nctools/bin/cdo"
+shopt -s expand_aliases    
+alias cdo="$USERAPPL/bioconda_env/nctools/bin/cdo"
+alias ncrename="$USERAPPL/bioconda_env/nco/bin/ncrename"
+alias ncdump="$USERAPPL/bioconda_env/nco/bin/ncdump"
+alias ncks="$USERAPPL/bioconda_env/nco/bin/ncks"
 
-cdo=cdo
 cdozip="$cdo -f nc4c -z zip"
-rbld="/gpfs/projects/bsc32/repository/apps/rebuild_nemo/rebuild_nemo"
-
-cdftoolsbin="${CDFTOOLS_DIR}/bin"
+rbld="$USERAPPL/NEMO-tools/TOOLS/REBUILD_NEMO/rebuild_nemo"
 python=python
+
+# CDFtools - note that you cannot use the "cdftools light" from the barakuda package
+cdftoolsbin="$USERAPPL/CDFTOOLS/bin"
 
 # By default the older (3.0.0) CDFTOOLS syntax is used.
 # If you use version 4 or 3.0.1 (or 3.0.2), set the corresponding flag to 1.
 cdftools4=0
 cdftools301=1
 
+# where to find mesh and mask files for NEMO. Files are expected in $MESHDIR_TOP/$NEMOCONFIG.
+export MESHDIR_TOP=${ECE3_POSTPROC_DATADIR}/post-proc
+
 # Set to 0 for not to rebuild 3D relative humidity
 rh_build=1
 
-#extension for IFS files, default ""
-[[ -z ${GRB_EXT:-} ]] && GRB_EXT="" #".grb"
-
-# number of parallel procs for IFS (max 12) and NEMO rebuild. Default to 12.
-if [ -z "${IFS_NPROCS:-}" ] ; then
-    IFS_NPROCS=12; NEMO_NPROCS=12
-fi
-
-# where to find mesh and mask files for NEMO. Files are expected in $MESHDIR_TOP/$NEMOCONFIG.
-export MESHDIR_TOP="/gpfs/projects/bsc32/repository/ece3-postproc"
-
 # Base dir to archive (ie just make a copy of) the monthly results. Daily results, if any, are left in scratch. 
-STOREDIR=$SCRATCH/ecearth3/post/hiresclim/
+STOREDIR=
+
+IFS_NPROCS=12 
+NEMO_NPROCS=12
 
 # ---------- NEMO VAR/FILES MANGLING ----------------------
 #
