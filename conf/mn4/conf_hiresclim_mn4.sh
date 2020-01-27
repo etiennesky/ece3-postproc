@@ -16,6 +16,7 @@ set -xuve
 # optional variables: $USER, $LEGNB, $year
 [[ -z ${IFSRESULTS0:-} ]] && export IFSRESULTS0='$SCRATCH/ECEARTH-RUNS/${EXPID}/output/ifs/${LEGNB}'
 [[ -z ${NEMORESULTS0:-} ]] && export NEMORESULTS0='$SCRATCH/ECEARTH-RUNS/${EXPID}/output/nemo/${LEGNB}'
+[[ -z ${ECE3_POSTPROC_TMPDIR:-} ]] && export ECE3_POSTPROC_TMPDIR='$ECE3_POSTPROC_TMPDIR'
 
 # --- PATTERN TO DEFINE WHERE TO SAVE POST-PROCESSED DATA
 # 
@@ -34,7 +35,7 @@ set -xuve
 # --- Switch between CMIP6 (1) or default (0) output. If set to 1,
 #      grib_filtering is applied, and NEMO files/variable name from
 #      r5717-cmip6-nemo-namelists are used.
-CMIP6=1
+#CMIP6=1
 
 # --- Filter IFS output (to be applied through a grib_filter call)
 #      Useful when there are output with different timestep and/or level types.

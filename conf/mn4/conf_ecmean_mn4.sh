@@ -52,7 +52,7 @@ export remap="remapcon2"
 #     Summary tables for several simulations will be in ${ECE3_POSTPROC_DIAGDIR}/table/
 #     
 [[ -z ${ECE3_POSTPROC_DIAGDIR:-} ]] && export ECE3_POSTPROC_DIAGDIR='$HOME/ecearth3/diag/'
-
+[[ -z ${ECE3_POSTPROC_TMPDIR:-} ]] && export ECE3_POSTPROC_TMPDIR='$ECE3_POSTPROC_TMPDIR'
 # [2] Where to save the climatology (769M IFS, 799M IFS+NEMO). 
 #
 # By default, if this is commented or empty, it is next to hiresclim2 monthly

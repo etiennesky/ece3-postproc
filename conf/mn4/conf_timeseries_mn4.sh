@@ -36,6 +36,7 @@ export MESHDIR_TOP="/gpfs/projects/bsc32/repository/ece3-postproc"
 export RUSER=
 export WWW_DIR_ROOT=
 
+[[ -z ${ECE3_POSTPROC_TMPDIR:-} ]] && export ECE3_POSTPROC_TMPDIR='$ECE3_POSTPROC_TMPDIR'
 
 ############################
 # Required software   #

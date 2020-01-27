@@ -86,8 +86,9 @@ export CLIMDIR
 mkdir -p $CLIMDIR
 
 #TMPDIR=$(mktemp -d) # $SCRATCH/tmp_ecearth3_ecmean.XXXXXX)
-mkdir -p $SCRATCH/tmp_ecearth3/tmp
-export TMPDIR=$(mktemp -d $SCRATCH/tmp_ecearth3/tmp/ecmean_${exp}_XXXXXX)
+TEMPDIR=$(eval echo $ECE3_POSTPROC_TMPDIR)
+mkdir -p $TEMPDIR
+export TMPDIR=$(mktemp -d $TEMPDIR/ecmean_${exp}_XXXXXX)
 
 ############################################################
 # Checking settings dependent only on the ECE3_POSTPROC_* variables, i.e. env
@@ -175,7 +176,7 @@ then
     rm $TABLEDIR/PI2_RK08_${exp}_${year1}_${year2}.txt $TABLEDIR/PIold_RK08_${exp}_${year1}_${year2}.txt
     mv $TMPDIR/out.txt $TABLEDIR/PI2_RK08_${exp}_${year1}_${year2}.txt 
     
-    # rm -rf $TMPDIR
+    rm -rf $TMPDIR
 fi
 
 printf "\n\n----------------------------------- Global Mean\n"

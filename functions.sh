@@ -31,6 +31,7 @@ eval_dirs() {
 
     NEMORESULTS=$(eval echo $NEMORESULTS0)
     IFSRESULTS=$(eval echo $IFSRESULTS0)
+    TEMPDIR=$(eval echo $ECE3_POSTPROC_TMPDIR)
 
     # hiresclim2 output, and also default climatology ouput from EC-mean
     OUTDIR0=$(eval echo ${ECE3_POSTPROC_POSTDIR})

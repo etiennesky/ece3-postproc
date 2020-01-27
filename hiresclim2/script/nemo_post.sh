@@ -28,8 +28,8 @@ then
 fi
 
 # temp working dir, within $TMPDIR so it is automatically removed or use XXXX template if debugging
-mkdir -p $SCRATCH/tmp_ecearth3/tmp
-WRKDIR=$(mktemp -d $SCRATCH/tmp_ecearth3/tmp/hireclim2_${expname}_XXXXXX) # use template if debugging
+mkdir -p ${ECE3_POSTPROC_TMPDIR}
+WRKDIR=$(mktemp -d ${ECE3_POSTPROC_TMPDIR}/hireclim2_${expname}_XXXXXX) # use template if debugging
 cd $WRKDIR
 
 NOMP=${NEMO_NPROCS}
@@ -200,11 +200,12 @@ then
     ncks -3 ${froot}_${LIM_T_FILES}.nc ${froot}_icemod_tmp.nc
     ncrename -O -d .x_grid_T,x ${froot}_icemod_tmp.nc
     ncrename -O -d .y_grid_T,y ${froot}_icemod_tmp.nc
-    # fix missingvalue introduced by ElPin
-    $cdo setmissval,0 ${froot}_icemod_tmp.nc ${froot}_icemod_tmp2.nc
-    ncks -4 -O ${froot}_icemod_tmp2.nc ${froot}_${LIM_T_FILES}.nc
-    rm -f ${froot}_icemod_tmp.nc ${froot}_icemod_tmp2.nc
+    $mv ${froot}_icemod_tmp.nc ${froot}_${LIM_T_FILES}.nc
 fi
+
+# fix missingvalue introduced by ElPin
+mv ${froot}_${LIM_T_FILES}.nc ${froot}_icemod_tmp.nc
+$cdo setmissval,0 ${froot}_icemod_tmp.nc ${froot}_${LIM_T_FILES}.nc
 
 # create time axis
 $cdo showdate ${froot}_${LIM_T_FILES}.nc | tr '[:blank:]' '\n' | \
@@ -215,11 +216,17 @@ $cdo showdate ${froot}_${LIM_T_FILES}.nc | tr '[:blank:]' '\n' | \
 #    remove piping and do it in two steps. Used to be:
 #     $cdozip splitvar -selvar,sosstsst,sosaline,sossheig,sowaflup ${froot}_${NEMO_T2D_FILES}.nc ${out}_
 #    Now:
-tempf=$(mktemp $SCRATCH/tmp_ecearth3/tmp/hireclim2_nemo_XXXXXX)
+##tempf=$(mktemp $SCRATCH/tmp_ecearth3/tmp/hireclim2_nemo_XXXXXX)
+#mkdir -p ${ECE3_POSTPROC_TMPDIR}
+#tempf=$(mktemp ${ECE3_POSTPROC_TMPDIR}/hireclim2_nemo_XXXXXX)
+#cd $tempf
+tempf=tmp_nemo
+rm -f $tempf
 $cdo selvar,sosstsst,sosaline,sossheig ${froot}_${NEMO_T2D_FILES}.nc $tempf
 $cdozip selvar,sowaflup ${froot}_${SBC}.nc ${out}_sowaflup
 $cdozip splitvar $tempf ${out}_
 rm -f $tempf
+
 
 for v in sosstsst sosaline sossheig # -- rename if needed, and average
 do
@@ -260,8 +267,13 @@ done
 
 # ** ice diagnostics
 
-tempf=$(mktemp $SCRATCH/tmp_ecearth3/tmp/hireclim2_nemo_XXXXXX)
+##tempf=$(mktemp $SCRATCH/tmp_ecearth3/tmp/hireclim2_nemo_XXXXXX)
+#mkdir -p ${ECE3_POSTPROC_TMPDIR}
+#tempf=$(mktemp -d ${ECE3_POSTPROC_TMPDIR}/hireclim2_nemo_XXXXXX)
+#cd $tempf
 
+tempf=temp_nemo
+rm -f $tempf
 $cdo selvar,iiceconc,iicethic ${froot}_${LIM_T_FILES}.nc $tempf
 $cdozip splitvar $tempf ${out}_
 rm -f $tempf
@@ -415,4 +427,4 @@ if [[ $nemo_extra == 1 ]] ; then
 fi # $nemo_extra == 1
 
 cd -
-rm -rf $WRKDIR
+#rm -rf $WRKDIR

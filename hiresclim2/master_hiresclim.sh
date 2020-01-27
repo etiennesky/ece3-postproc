@@ -31,6 +31,10 @@ usage()
 
 months_per_leg=12                  # nb of months per legs. Default: yearly legs.
 
+export CMIP6=1
+#export CMIP6=${ECE3_POSTPROC_HC_CMIP6:1}
+
+
 while getopts "h?6m:u:" opt; do
     case "$opt" in
         h|\?)

@@ -17,8 +17,8 @@ then
 fi
 
 # temp working dir, within $TMPDIR so it is automatically removed
-mkdir -p $SCRATCH/tmp_ecearth3/tmp
-WRKDIR=$(mktemp -d $SCRATCH/tmp_ecearth3/tmp/hireclim2_${expname}_XXXXXX) # use template if debugging
+mkdir -p $TEMPDIR
+WRKDIR=$(mktemp -d ${TEMPDIR}/hireclim2_${expname}_XXXXXX) # use template if debugging
 cd $WRKDIR
 
 NPROCS=${IFS_NPROCS:-12}
@@ -31,7 +31,7 @@ OUTDIR=$OUTDIR0/mon/Post_$year
 mkdir -p $OUTDIR || exit -1
 
 echo "*II* --- Analyzing monthly output -----"
-echo "*II* Temporary directory is $WRKDIR"
+echo "*II* Temporary directory is $TEMPDIR"
 echo "*II* Data directory is $IFSRESULTS"
 echo "*II* Postprocessing with $NPROCS cores"
 echo "*II* Postprocessed data directory is $OUTDIR"
@@ -119,6 +119,16 @@ then
     pptime=$($cdo showtime -seltimestep,1,2 icmgg2df_${year}01  | \
         tr -s ' ' ':' | awk -F: '{print ($5-$2)*3600+($6-$3)*60+($7-$4)}' )
 
+    rm -f icmgg_${year}.grb 
+    $cdo cat icmgg2d_${year}??.grb icmgg_${year}.grb
+    rm icmgg2d_${year}??.grb icmgg2df_${year}??
+    $cdozip -r -R -t $ecearth_table splitvar \
+        -selvar,uas,vas,tas,ci,sstk,sd,tds,tcc,lcc,mcc,hcc,tclw,tciw,tcwv,msl,fal \
+        icmgg_${year}.grb ${out}_
+
+    export do_3d_vars=${ECE3_POSTPROC_ECM_3D_VARS:-1}
+    if  (( do_3d_vars ))
+    then
     echo "$FILTERGG3D" > filtgg3d.txt
     for m1 in $(seq 1 $NPROCS 12)
     do
@@ -138,17 +148,14 @@ then
         wait
     done
 
-    rm -f icmgg_${year}.grb icmgg3d_${year}.grb
-    $cdo cat icmgg2d_${year}??.grb icmgg_${year}.grb
+    rm -f icmgg3d_${year}.grb
     $cdo cat icmgg3d_${year}??.grb icmgg3d_${year}.grb
-    rm icmgg2d_${year}??.grb icmgg3d_${year}??.grb icmgg2df_${year}?? icmgg3df_${year}??
-
-    $cdozip -r -R -t $ecearth_table splitvar \
-        -selvar,uas,vas,tas,ci,sstk,sd,tds,tcc,lcc,mcc,hcc,tclw,tciw,tcwv,msl,fal \
-        icmgg_${year}.grb ${out}_
-
+    rm icmgg3d_${year}??.grb icmgg3df_${year}??
     $cdozip -r -R -t $ecearth_table selvar,q  icmgg3d_${year}.grb ${out}_q.nc
-    rm filtgg2d.txt filtgg3d.txt
+    rm filtgg3d.txt
+    fi #do_3d
+
+   rm filtgg2d.txt 
 
 else
     for m1 in $(seq 1 $NPROCS 12)

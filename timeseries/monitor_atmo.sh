@@ -39,8 +39,9 @@ while getopts R:y:t:foeh option ; do
     esac
 done
 
-mkdir -p $SCRATCH/tmp_ecearth3/tmp
-export TMPDIR_ROOT=$(mktemp -d $SCRATCH/tmp_ecearth3/tmp/ts_${RUN}_XXXXXX)
+TEMPDIR=$(eval echo $ECE3_POSTPROC_TMPDIR)
+mkdir -p $TEMPDIR
+export TMPDIR_ROOT=$(mktemp -d $TEMPDIR/ts_${RUN}_XXXXXX)
 export POST_DIR=$DATADIR
 
 echo
@@ -380,4 +381,5 @@ if [ ${IPREPHTML} -eq 1 ]; then
 fi # [ ${IPREPHTML} -eq 1 ]
 
 
-#rm -rf ${TMPD}
+rm -rf ${TMPDIR}
+rm -rf ${TEMPDIR}
