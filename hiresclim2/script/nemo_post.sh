@@ -28,8 +28,8 @@ then
 fi
 
 # temp working dir, within $TMPDIR so it is automatically removed or use XXXX template if debugging
-mkdir -p ${ECE3_POSTPROC_TMPDIR}
-WRKDIR=$(mktemp -d ${ECE3_POSTPROC_TMPDIR}/hireclim2_${expname}_XXXXXX) # use template if debugging
+mkdir -p ${TEMPDIR}
+WRKDIR=$(mktemp -d ${TEMPDIR}/hireclim2_${expname}_XXXXXX) # use template if debugging
 cd $WRKDIR
 
 NOMP=${NEMO_NPROCS}
