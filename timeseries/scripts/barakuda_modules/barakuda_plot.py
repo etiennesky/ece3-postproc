@@ -21,7 +21,9 @@ import barakuda_orca as brkdo
 WDTH_TS     = 13.2
 FIG_SIZE_TS = (WDTH_TS,4.2)
 DPI_TS      = 120
-AXES_TS     = [0.08, 0.05, 0.89, 0.89]
+#AXES_TS     = [0.08, 0.05, 0.89, 0.89]
+# ajusted axis for marenostrum4
+AXES_TS     = [0.15, 0.1, 0.80, 0.80]
 
 
 
