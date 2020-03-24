@@ -103,18 +103,26 @@ fi
 # where to find mesh and mask files 
 export NEMO_MESH_DIR=${MESHDIR_TOP}/$NEMOCONFIG
 
+# c-cycle - activate for EC-Earth-CC model
+export ccycle=${ECE3_POSTPROC_CCYCLE:-1}
+export ccycle_pisces=${ECE3_POSTPROC_CCYCLE_PISCES:-1}
+export ccycle_lpjg=${ECE3_POSTPROC_CCYCLE_LPJG:-1}
+export ccycle_tm5=${ECE3_POSTPROC_CCYCLE_TM5:-1}
+
+
+cd $ECE3_POSTPROC_TOPDIR/timeseries
+
 
 ###########################
 # -- Atmospheric timeseries
 ###########################
-
-cd $ECE3_POSTPROC_TOPDIR/timeseries
 
 echo "*II* Compute Atmospheric TimeSeries"
 ./monitor_atmo.sh -R $EXPID -o
 
 echo "*II* Plot Atmospheric TimeSeries"
 ./monitor_atmo.sh -R $EXPID -e
+
 
 #######################
 # -- Oceanic timeseries
@@ -124,9 +132,22 @@ if (( $do_ocean ))
 then
     echo "*II* Compute Oceanic TimeSeries"
     ./monitor_ocean.sh -R $EXPID
-    
+
     echo "*II* Plot Oceanic TimeSeries"
     ./monitor_ocean.sh -R $EXPID -e
+fi
+
+
+#######################
+# -- Carbon cycle timeseries
+#######################
+if (( $ccycle ))
+then
+    echo "*II* Compute Carbon Cycle TimeSeries"
+    ./monitor_ccycle.sh -R $EXPID -o
+
+    echo "*II* Plot Carbon Cycle TimeSeries"
+    ./monitor_ccycle.sh -R $EXPID -e
 fi
 
 #########################

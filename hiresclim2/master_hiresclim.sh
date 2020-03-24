@@ -93,6 +93,12 @@ ifs_6hrs=${ECE3_POSTPROC_HC_IFS_6HRS:-0}
 nemo=${ECE3_POSTPROC_HC_NEMO:-1}
 nemo_extra=${ECE3_POSTPROC_HC_NEMO_EXTRA:-0}
 
+# c-cycle - activate for EC-Earth-CC model
+export ccycle=${ECE3_POSTPROC_CCYCLE:-1}
+export ccycle_lpjg=${ECE3_POSTPROC_CCYCLE_LPJG:-1}
+export ccycle_pisces=${ECE3_POSTPROC_CCYCLE_PISCES:-1}
+export ccycle_tm5=${ECE3_POSTPROC_CCYCLE_TM5:-1}
+
 ########## HARDCODED OPTIONS ###############
 
 # copy monthly results in a second folder
@@ -160,6 +166,7 @@ cd $PROGDIR/script
 ######################################
 
     start1=$(date +%s)
+
     if [ $ifs_monthly == 1 ] ; then 
         . ./ifs_monthly.sh $expname $year $yref
     fi
@@ -183,6 +190,10 @@ cd $PROGDIR/script
 
     if [ $nemo == 1 ] ; then
         . ./nemo_post.sh $expname $year $yref $nemo_extra
+    fi
+
+    if [ $ccycle == 1 ] ; then
+        . ./ccycle_post.sh $expname $year $yref
     fi
 
     end1=$(date +%s)
