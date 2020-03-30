@@ -1457,6 +1457,83 @@ def plot_1d_mon_ann(VTm, VTy, VDm, VDy, cfignm='fig', dt_year=5, cyunit='', ctit
 
 
 
+def plot_1d_ann(VTy, VDy, cfignm='fig', dt_year=5, cyunit='', ctitle='',
+                    ymin=0, ymax=0, dy=0, mnth_col='b', plt_m03=False, plt_m09=False,
+                    cfig_type='png', l_tranparent_bg=True):
+
+    #
+    # if you specify ymin and ymax you can also specify y increment (for y grid) as dy
+    #
+    # plt_m03 => plot march values on top in green
+    # plt_m09 => plot september values on top in green
+
+    font_ttl, font_ylb, font_clb = __font_unity__()
+
+    #Nt1 = len(VTm) ; Nt2 = len(VTy)
+    Nt2 = len(VTy)
+
+    #if len(VTm) != len(VDm): print 'ERROR: plot_1d_mon_ann.barakuda_plot => VTm and VDm do not agree in size'; sys.exit(0)
+    if len(VTy) != len(VDy): print 'ERROR: plot_1d_mon_ann.barakuda_plot => VTy and VDy do not agree in size'; sys.exit(0)
+
+    fig = plt.figure(num = 1, figsize=FIG_SIZE_TS, facecolor='w', edgecolor='k')
+
+    ax = plt.axes(AXES_TS)
+
+    #plt.plot(VTm, VDm, mnth_col, label=r'monthly', linewidth=1)
+    plt.plot(VTy, VDy, 'r', label=r'annual', linewidth=2)
+
+    #if plt_m03: plt.plot(VTm[2:Nt1:12], VDm[2:Nt1:12], 'orange', label=r'March',     linewidth=2)
+    #if plt_m09: plt.plot(VTm[8:Nt1:12], VDm[8:Nt1:12], 'orange', label=r'September', linewidth=2)
+
+    #if plt_m03 or plt_m09: plt.legend(loc='lower center', shadow=True, fancybox=True)
+
+
+    #y1 = int(min(VTy)-0.5)
+    #y2 = int(max(VTy)+0.5)
+    y1 = int(min(VTy))
+    y2 = int(max(VTy))
+
+    mean_val = nmp.mean(VDy)
+    #df = max( abs(min(VDm)-mean_val), abs(max(VDm)-mean_val) )
+    df = max( abs(min(VDy)-mean_val), abs(max(VDy)-mean_val) )
+
+    if ymin==0 and ymax==0:
+        #plt.axis( [y1, y2, min(VDm)-0.2*df, max(VDm)+0.2*df] )
+        plt.axis( [y1, y2, min(VDy)-0.2*df, max(VDy)+0.2*df] )
+    else:
+        plt.axis([y1, y2, ymin,     ymax])
+        if dy != 0: plt.yticks( nmp.arange(trunc(ymin+0.5), trunc(ymax)+dy, dy) )
+
+
+    y_formatter = mpl.ticker.ScalarFormatter(useOffset=False)
+    ax.yaxis.set_major_formatter(y_formatter)
+
+
+    plt.xticks( nmp.arange(y1, y2+dt_year, dt_year) )
+
+    #BUG?:
+    locs, labels = plt.xticks() ; jl=0; newlabels = []
+    for ll in locs: newlabels.append(str(int(locs[jl]))); jl=jl+1
+    plt.xticks(locs,newlabels)
+    #BUG?.
+
+    #plt.xlim((y1, y2))
+    
+    ax.grid(color='k', linestyle='-', linewidth=0.2)
+
+    plt.ylabel('('+cyunit+')', **font_ylb)
+
+    plt.title(ctitle)
+    
+    cf_fig = cfignm+'.'+cfig_type
+
+    plt.savefig(cf_fig, dpi=DPI_TS, orientation='portrait', transparent=l_tranparent_bg)
+
+    plt.close(1)
+
+
+
+
 
 
 

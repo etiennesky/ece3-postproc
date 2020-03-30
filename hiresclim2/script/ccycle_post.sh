@@ -46,6 +46,12 @@ avars=""
 [ ${ccycle_lpjg} == 1 ] && avars+=" cLand"
 [ ${ccycle_tm5} == 1 ] && avars+=" co2 co2mass"
 
+# for PISCES - special treatment of ocean.carbon
+if [ ${ccycle_pisces} == 1 ] ; then
+    #$python $PROGDIR/script/ocean_carbon_csv2nc.py ${ECE3_POSTPROC_RUNDIR}/ocean.carbon ${out}_ocean_carbon.nc
+    cp ${ECE3_POSTPROC_RUNDIR}/ocean.carbon ${out}_ocean.carbon
+fi
+
 for cvar in ${avars[*]}; do
 
     rm -f tmp?.nc area.nc weights.nc
@@ -66,7 +72,12 @@ for cvar in ${avars[*]}; do
     cmor_dir=$( echo $CMORRESULTS/*/*/*/*/*/${cmor_table}/${cvar}/*/* )
     cmor_file=$( cd ${cmor_dir} && ls ${cvar}_${cmor_table}_*_${year}01-${year}12.nc )
 
-    cp ${cmor_dir}/${cmor_file} .
+    if [ $cvar = "co2" ] ; then
+       $cdo setctomiss,nan ${cmor_dir}/${cmor_file} ${cmor_file}
+    else
+       cp ${cmor_dir}/${cmor_file} .
+    fi
+
     if [ $oper = "fldsum" ] ; then
         $cdo -f nc gridarea ${cmor_file} area.nc
         $cdo mul area.nc ${cmor_file} tmp1.nc
@@ -77,12 +88,14 @@ for cvar in ${avars[*]}; do
     else
         cp ${cmor_file} tmp2.nc
     fi
-    #ncrename -v cLand,cland tmp2.nc
+
+    # setup time dimension
     $cdo -R settunits,hours -settime,0 -setday,1 tmp2.nc tmp3.nc
     mv tmp3.nc ${out}_${cvar}.nc
 
     if [ $cvar = "co2" ] ; then
-        cdo chvar,co2,co2s -sellevel,100000 ${out}_${cvar}.nc ${out}_co2s.nc
+        #cdo chvar,co2,co2s -sellevel,100000 ${out}_${cvar}.nc ${out}_co2s.nc
+        $cdo chvar,co2,co2s -sellevel,92500 ${out}_${cvar}.nc ${out}_co2s.nc
     fi
 
     rm -f tmp?.nc area.nc weights.nc

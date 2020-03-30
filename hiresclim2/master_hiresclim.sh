@@ -94,10 +94,10 @@ nemo=${ECE3_POSTPROC_HC_NEMO:-1}
 nemo_extra=${ECE3_POSTPROC_HC_NEMO_EXTRA:-0}
 
 # c-cycle - activate for EC-Earth-CC model
-export ccycle=${ECE3_POSTPROC_CCYCLE:-1}
-export ccycle_lpjg=${ECE3_POSTPROC_CCYCLE_LPJG:-1}
-export ccycle_pisces=${ECE3_POSTPROC_CCYCLE_PISCES:-1}
-export ccycle_tm5=${ECE3_POSTPROC_CCYCLE_TM5:-1}
+export ccycle=${ECE3_POSTPROC_CCYCLE:-0}
+export ccycle_lpjg=${ECE3_POSTPROC_CCYCLE_LPJG:-0}
+export ccycle_pisces=${ECE3_POSTPROC_CCYCLE_PISCES:-0}
+export ccycle_tm5=${ECE3_POSTPROC_CCYCLE_TM5:-0}
 
 ########## HARDCODED OPTIONS ###############
 

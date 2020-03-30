@@ -59,7 +59,8 @@ echo
 TMPDIR=${TMPDIR_ROOT}
 
 # On what variable should we test files:
-cv_test="msl"
+#cv_test="msl"
+cv_test="cLand"
 
 # *** end of conf ***
 
@@ -151,6 +152,7 @@ if [ ${iforcey0} -eq 1 ]; then
 fi
 
 export SUPA_FILE=${DIAG_D}/${RUN}_${YEAR_INI}_${YEAR_END}_time-series_ccycle.nc
+export SUPA_FILE2=${DIAG_D}/${RUN}_${YEAR_INI}_${YEAR_END}_time-series_ccycle2.nc
 
 # ~~~~~~~~~~~~~~~~~~~~~~~`
 
@@ -232,6 +234,10 @@ if [ ${IPREPHTML} -eq 0 ]; then
                     ncap2 -3 -h -O -s "time=(time/24.+15.5)/${nbday}" tmp.nc -o tmp0.nc
                     ncap2 -3 -h -O -s "time=time-time(0)+${jyear}+15.5/${nbday}" \
                         -s "time@units=\"years\"" tmp0.nc -o tmp2.nc
+		    # remove the 15.5 day offset to be able to compare with ocean data on Jan 1 00:00
+#                    ncap2 -3 -h -O -s "time=(time/24.)/${nbday}" tmp.nc -o tmp0.nc
+#                    ncap2 -3 -h -O -s "time=time-time(0)+${jyear}" \
+#                        -s "time@units=\"years\"" tmp0.nc -o tmp2.nc
                     ncks -3 -h -O -v time tmp2.nc -o time_${jyear}.nc
                     rm -f tmp0.nc tmp2.nc
                 fi
@@ -273,8 +279,13 @@ if [ ${IPREPHTML} -eq 0 ]; then
     ncrcat -O time_*.nc -o supa_time.nc
     echo "ncks -3 -A -h -v time supa_time.nc -o ${SUPA_FILE}"
     ncks -3 -A -h -v time supa_time.nc -o ${SUPA_FILE}
-    
+
     rm -f ${RUN}_*_time-series_ccycle.tmp time_*.nc supa_time.nc
+
+
+    # generate ocean_carbon diags from csv file
+    #cp ${DATADIR}/Post_????/${RUN}_${YEAR_END}_ocean_carbon.nc ${SUPA_FILE}
+    ${PYTHON} ${HERE}/scripts/ocean_carbon_csv2nc.py ${DATADIR}/Post_????/${RUN}_${YEAR_END}_ocean.carbon ${SUPA_FILE2}
 
     cd ..
     rm -rf ${TMPD}
@@ -308,6 +319,8 @@ if [ ${IPREPHTML} -eq 1 ]; then
     cd ${DIAG_D}/
 
     ${PYTHON} ${HERE}/scripts/plot_ccycle_time_series.py
+
+    ${PYTHON} ${HERE}/scripts/plot_ccycle_time_series2.py
 
     # Configuring HTML display file:
     sed -e "s/{TITLE}/Carbon cycle diagnostics for EC-Earth coupled experiment/g" \
