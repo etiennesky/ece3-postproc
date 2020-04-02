@@ -31,6 +31,7 @@ eval_dirs() {
 
     NEMORESULTS=$(eval echo $NEMORESULTS0)
     IFSRESULTS=$(eval echo $IFSRESULTS0)
+    TM5RESULTS=$(eval echo $TM5RESULTS0)
     CMORRESULTS=$(eval echo $CMORRESULTS0)
     TEMPDIR=$(eval echo $ECE3_POSTPROC_TMPDIR)
 

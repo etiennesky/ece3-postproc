@@ -1480,7 +1480,8 @@ def plot_1d_ann(VTy, VDy, cfignm='fig', dt_year=5, cyunit='', ctitle='',
     ax = plt.axes(AXES_TS)
 
     #plt.plot(VTm, VDm, mnth_col, label=r'monthly', linewidth=1)
-    plt.plot(VTy, VDy, 'r', label=r'annual', linewidth=2)
+    #plt.plot(VTy, VDy, 'r', label=r'annual', linewidth=2)
+    plt.plot(VTy, VDy, 'gray', label=r'annual', linewidth=2, marker='o')
 
     #if plt_m03: plt.plot(VTm[2:Nt1:12], VDm[2:Nt1:12], 'orange', label=r'March',     linewidth=2)
     #if plt_m09: plt.plot(VTm[8:Nt1:12], VDm[8:Nt1:12], 'orange', label=r'September', linewidth=2)
@@ -1491,15 +1492,19 @@ def plot_1d_ann(VTy, VDy, cfignm='fig', dt_year=5, cyunit='', ctitle='',
     #y1 = int(min(VTy)-0.5)
     #y2 = int(max(VTy)+0.5)
     y1 = int(min(VTy))
+    #y2 = int(max(VTy)+1)
     y2 = int(max(VTy))
 
-    mean_val = nmp.mean(VDy)
+    #mean_val = nmp.mean(VDy)
+    mean_val = float(nmp.nanmean(VDy))
     #df = max( abs(min(VDm)-mean_val), abs(max(VDm)-mean_val) )
-    df = max( abs(min(VDy)-mean_val), abs(max(VDy)-mean_val) )
+    #df = max( abs(min(VDy)-mean_val), abs(max(VDy)-mean_val) )
+    df = max( abs(float(nmp.nanmin(VDy))-mean_val), abs(float(nmp.nanmax(VDy))-mean_val) )
 
     if ymin==0 and ymax==0:
         #plt.axis( [y1, y2, min(VDm)-0.2*df, max(VDm)+0.2*df] )
-        plt.axis( [y1, y2, min(VDy)-0.2*df, max(VDy)+0.2*df] )
+        #plt.axis( [y1, y2, min(VDy)-0.2*df, max(VDy)+0.2*df] )
+        plt.axis( [y1, y2, float(nmp.nanmin(VDy))-0.2*df, float(nmp.nanmax(VDy))+0.2*df] )
     else:
         plt.axis([y1, y2, ymin,     ymax])
         if dy != 0: plt.yticks( nmp.arange(trunc(ymin+0.5), trunc(ymax)+dy, dy) )
@@ -1526,7 +1531,7 @@ def plot_1d_ann(VTy, VDy, cfignm='fig', dt_year=5, cyunit='', ctitle='',
     plt.title(ctitle)
     
     cf_fig = cfignm+'.'+cfig_type
-
+    
     plt.savefig(cf_fig, dpi=DPI_TS, orientation='portrait', transparent=l_tranparent_bg)
 
     plt.close(1)

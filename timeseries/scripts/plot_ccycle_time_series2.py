@@ -3,7 +3,7 @@
 import sys
 import os
 import numpy as nmp
-from netCDF4 import Dataset
+from netCDF4 import Dataset, num2date
 
 # From BaraKuda python package:
 import barakuda_orca as bo
@@ -17,7 +17,7 @@ if CRUN == None: print 'The RUN environement variable is no set'; sys.exit(0)
 SUPA_FILE = os.getenv('SUPA_FILE')
 if SUPA_FILE == None: print 'The SUPA_FILE environement variable is no set'; sys.exit(0)
 
-print '\n *** plot_ccycle_time_series.py => USING time series in '+SUPA_FILE
+print '\n *** plot_ccycle_time_series2.py => USING time series in '+SUPA_FILE
 
 
 #narg = len(sys.argv)
@@ -33,13 +33,19 @@ bt.chck4f(SUPA_FILE)
 
 id_clim = Dataset(SUPA_FILE)
 
-vtime = id_clim.variables['time'][:]
+#vtime = id_clim.variables['time'][:]
+times = id_clim.variables['time']
+dates = num2date(times[:],units=times.units,calendar=times.calendar)[:]
+vtime = nmp.zeros(len(dates))
+for jv in range(len(dates)):
+    vtime[jv] = dates[jv].year
+
 
 nbr   = len(vtime)
 
-
 #v_var_names = [ 'msl', 'tas', 'totp', 'NetTOA', 'NetSFC', 'PminE', 'e', 'tcc', 'PminE', 'tsr', 'ssr' ]
-#v_var_names = [ 'cLand' , 'co2s', 'co2mass', 'cAtmos' ]
+#v_var_names = [ 'cLand' , 'co2s', 'co2mass' ]
+#v_var_names = [ 'cOcean', 'fgco2', 'rivsed', 'corr' ]
 
 # get all variables which are not dimensions
 vars = id_clim.variables
@@ -48,9 +54,7 @@ v_var_names=[]
 excluded_vars = [ 'time', 'lat', 'lon', 'depth' ]
 for var in vars.keys():
     if var not in dims and var not in excluded_vars:
-        print(var)
         v_var_names.append(var)
-
 
 nbvar = len(v_var_names)
 v_var_units = nmp.zeros(nbvar, dtype = nmp.dtype('a8'))
@@ -74,60 +78,38 @@ for jv in range(nbvar):
         v_var_lngnm[jv] = id_clim.variables[v_var_names[jv]].long_name
     except AttributeError:
         v_var_lngnm[jv] = v_var_names[jv]
+    try:
+        missval = id_clim.variables[v_var_names[jv]].missing_value
+    except AttributeError:
+        missval = None
+    if not missval is None:
+        XX[jv,:]  = nmp.ma.masked_where(XX[jv,:]==missval, XX[jv,:])
+        print("got missval: "+str(missval))
+        print(XX[jv,:])
 
 id_clim.close()
-
-
 
 
 for jv in range(nbvar):
 
     cv  = v_var_names[jv]
     cln = v_var_lngnm[jv]
-    cfn  = cv+'_'+CRUN
+    cfn  = cv+'_year_'+CRUN
 
     print '   Creating figure '+cfn
 
     # Annual data
-    VY, FY = bt.monthly_2_annual(vtime[:], XX[jv,:])
+    #VY, FY = bt.monthly_2_annual(vtime[:], XX[jv,:])
 
-    ittic = bt.iaxe_tick(nbr/12)
+    #ittic = bt.iaxe_tick(nbr/12)
+    ittic = bt.iaxe_tick(nbr)
 
     # Time to plot
-    bp.plot_1d_mon_ann(vtime[:], VY, XX[jv,:], FY, cfignm=cfn, dt_year=ittic,
-#                          cyunit=v_var_units[jv], ctitle = CRUN+': '+cln,
-                          cyunit=v_var_units[jv], ctitle = CRUN+' / '+cv+" : " +cln, 
+    #bp.plot_1d_mon_ann(vtime[:], VY, XX[jv,:], FY, cfignm=cfn, dt_year=ittic,
+    bp.plot_1d_ann(vtime[:], XX[jv,:], cfignm=cfn, dt_year=ittic,
+                          cyunit=v_var_units[jv], ctitle = CRUN+' / '+cv+" : " +cln,
                           cfig_type='svg', l_tranparent_bg=False)
 
 
-sys.exit(0)
-
 print 'plot_time_series.py done...\n'
 
-
-##########################################
-# Basic temp., sali. and SSH time series #
-##########################################
-
-if fig_id == 'simple':
-
-    SUPA_FILE_m = cdiag+'_'+CRUN+'_global.dat'
-
-    # Yearly data:
-    #XY = bt.read_ascii_column(SUPA_FILE_y, [0, 1]) ; [ n0, nby ] = XY.shape
-
-    # Monthly data:
-    XM = bt.read_ascii_column(SUPA_FILE_m, [0, 1]) ; [ n0, nbm ] = XM.shape
-    if nbm%12 != 0: print 'ERROR: plot_time_series.py => '+cdiag+', numberof records not a multiple of 12!', sys.exit(0)
-
-    # Annual data
-    VY, FY = bt.monthly_2_annual(XM[0,:], XM[1,:])
-
-    ittic = bt.iaxe_tick(nbm/12)
-
-    # Time to plot
-    bp.plot_1d_mon_ann(XM[0,:], VY, XM[1,:], FY, cfignm=cdiag+'_'+CRUN, dt_year=ittic,
-                         cyunit=cyu, ctitle = CRUN+': '+clnm, ymin=ym, ymax=yp)
-
-
-print 'plot_time_series.py done...\n'

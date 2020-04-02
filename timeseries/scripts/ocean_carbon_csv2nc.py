@@ -37,23 +37,24 @@ var_time.standard_name = 'time'
 #temp = ncfile.createVariable('temp',np.float64,('time'))
 #temp.units = 'K' # degrees Kelvin
 #temp.standard_name = 'air_temperature' # this is a CF standard name
-var_totc = ncfile.createVariable('cOcean',np.float64,('time'))
-var_totc.units = 'Pg'
-var_totc.long_name = 'TotC-PgC'
-#var_totc.standard_name = 'cOcean'
-var_rivsed = ncfile.createVariable('rivsed',np.float64,('time'))
-var_rivsed.units = 'Pg'
-var_rivsed.long_name = 'riv+sed-Pg'
-#var_rivsed.standard_name = 'riv+sed-Pg'
-var_fgco2 = ncfile.createVariable('fgco2',np.float64,('time'))
-var_fgco2.units = 'Pg'
-var_fgco2.long_name = 'fgco2'
-#var_fgco2.standard_name = 'fgco2'
-var_corr = ncfile.createVariable('corr',np.float64,('time'))
-var_corr.units = 'Pg'
-var_corr.long_name = 'corr'
-#var_corr.standard_name = 'corr'
 
+var_totc = ncfile.createVariable('cOcean',np.float64,('time'))
+var_totc.units = 'Pg C'
+var_totc.long_name = 'Total Carbon in Ocean (PISCES)'
+#var_totc.standard_name = 'cOcean'
+
+var_fgco2 = ncfile.createVariable('fgco2_p4z',np.float64,('time'))
+var_fgco2.units = 'Pg C'
+var_fgco2.long_name = "Surface Downward Flux of Total CO2 (PISCES)"
+var_fgco2.standard_name = "surface_downward_mass_flux_of_carbon_dioxide_expressed_as_carbon"
+
+var_rivsed = ncfile.createVariable('rivsed_p4z',np.float64,('time'))
+var_rivsed.units = 'Pg C'
+var_rivsed.long_name = 'River input - Sedimentation (PISCES)'
+
+var_corr = ncfile.createVariable('corr_p4z',np.float64,('time'))
+var_corr.units = 'Pg C'
+var_corr.long_name = 'C mass damping flux (PISCES)'
 
 # open csv file and to get # of rows
 csv_file=open(ifile)

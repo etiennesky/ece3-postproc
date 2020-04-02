@@ -59,7 +59,6 @@ echo
 TMPDIR=${TMPDIR_ROOT}
 
 # On what variable should we test files:
-#cv_test="msl"
 cv_test="cLand"
 
 # *** end of conf ***
@@ -127,9 +126,13 @@ fi
 FILELIST=(${DIAG_D}/${RUN}*.nc)
 BASE_YEAR_INI=
 
+YEAR_I=${YEAR_INI}
+
 if [ -e ${FILELIST[0]}  ] ; then
     echo " Timeseries analysis has been performed and files has been saved..." ; echo
-    OLD_SUPA_FILE=$( ls -tr ${DIAG_D}/${RUN}_${YEAR_INI}*.nc | tail -1 )
+    OLD_SUPA_FILE=$( ls -tr ${DIAG_D}/${RUN}_${YEAR_INI}*_time-series_ccycle.nc | tail -1 )
+    OLD_SUPA_FILE2=$( ls -tr ${DIAG_D}/${RUN}_${YEAR_INI}*_time-series_ccycle2.nc | tail -1 )
+    OLD_SUPA_FILE3=$( ls -tr ${DIAG_D}/${RUN}_${YEAR_INI}*_time-series_ccycle3.nc | tail -1 )
     OLD_YEAR_END=$(basename $OLD_SUPA_FILE | sed "s|${RUN}_${YEAR_INI}_\(....\).*|\1|")
     
     if [[ ${OLD_YEAR_END} -ne ${YEAR_END} ]] ; then
@@ -151,20 +154,28 @@ if [ ${iforcey0} -eq 1 ]; then
     echo " Initial year forced to ${YEAR_INI}"; echo
 fi
 
-export SUPA_FILE=${DIAG_D}/${RUN}_${YEAR_INI}_${YEAR_END}_time-series_ccycle.nc
-export SUPA_FILE2=${DIAG_D}/${RUN}_${YEAR_INI}_${YEAR_END}_time-series_ccycle2.nc
+SUPA_FILE=${DIAG_D}/${RUN}_${YEAR_INI}_${YEAR_END}_time-series_ccycle.nc
+[[ ! -z ${BASE_YEAR_INI} ]] && SUPA_FILE2=${DIAG_D}/${RUN}_${BASE_YEAR_INI}_${YEAR_END}_time-series_ccycle2.nc || SUPA_FILE2=${DIAG_D}/${RUN}_${YEAR_INI}_${YEAR_END}_time-series_ccycle2.nc
+[[ ! -z ${BASE_YEAR_INI} ]] && SUPA_FILE3=${DIAG_D}/${RUN}_${BASE_YEAR_INI}_${YEAR_END}_time-series_ccycle3.nc || SUPA_FILE3=${DIAG_D}/${RUN}_${YEAR_INI}_${YEAR_END}_time-series_ccycle3.nc
+
+export SUPA_FILE SUPA_FILE2 SUPA_FILE3
 
 # ~~~~~~~~~~~~~~~~~~~~~~~`
 
 jyear=${YEAR_INI}
 
-#avars="sf tas msl tcc totp e sshf slhf ssr str tsr ttr"
-#var_diags="msl NetSFC NetTOA PminE tas tcc sshf slhf ssr str tsr ttr e"
+monvars="" #monthly files
+yearvars="" #yearly files
 
-avars=""
-[ ${ccycle_lpjg} == 1 ] && avars+=" cLand"
-[ ${ccycle_tm5} == 1 ] && avars+=" co2s co2mass"
+if [ ${ccycle_lpjg} == 1 ] ; then
+    monvars+=" cLand nbp nep fco2nat fco2antt"
+    yearvars+=" cLand nbp nep fco2nat fco2antt"
+fi
+[ ${ccycle_tm5} == 1 ] && monvars+=" co2s co2mass cAtmos" && yearvars+=" co2s co2mass cAtmos"
+[ ${ccycle_pisces} == 1 ] && monvars+=" fgco2" && yearvars+=" fgco2"
 
+# should missing values in the first and last years of the yearly timeseries be extrapolated?
+missval_extrapolate=true
 
 fcompletion=${DIAG_D}/last_year_done.info
 
@@ -218,7 +229,7 @@ if [ ${IPREPHTML} -eq 0 ]; then
             cd ${TMPD}/
 
             jv=0
-            for cvar in ${avars[*]}; do
+            for cvar in ${monvars[*]}; do
 
                 rm -f tmp.nc tmp2.nc
 
@@ -263,8 +274,6 @@ if [ ${IPREPHTML} -eq 0 ]; then
 
             done
 
-
-
             
             echo " ${SUPA_Y} done..."; echo; echo
             
@@ -282,10 +291,62 @@ if [ ${IPREPHTML} -eq 0 ]; then
 
     rm -f ${RUN}_*_time-series_ccycle.tmp time_*.nc supa_time.nc
 
-
     # generate ocean_carbon diags from csv file
-    #cp ${DATADIR}/Post_????/${RUN}_${YEAR_END}_ocean_carbon.nc ${SUPA_FILE}
-    ${PYTHON} ${HERE}/scripts/ocean_carbon_csv2nc.py ${DATADIR}/Post_????/${RUN}_${YEAR_END}_ocean.carbon ${SUPA_FILE2}
+    if [ ${ccycle_pisces} == 1 ] ; then
+	#cp ${DATADIR}/Post_????/${RUN}_${YEAR_END}_ocean_carbon.nc ${SUPA_FILE}
+	tmpf=${DATADIR}/../year/Post_${YEAR_END}/${RUN}_${YEAR_END}_ocean.carbon
+	${PYTHON} ${HERE}/scripts/ocean_carbon_csv2nc.py ${tmpf} ${tmpf}.nc
+	cp ${tmpf}.nc ${SUPA_FILE3}
+    fi
+
+    # generate yearly diagnostics
+    # first get complete yearly timeseries for each var from the hiresclim yearly data
+    rm -f tmp_*.nc
+    for cvar in ${yearvars[*]}; do
+        cdo -O mergetime ${DATADIR}/../year/Post_????/${RUN}_????_${cvar}.nc tmp_${cvar}.nc
+	if [ ${YEAR_I} != ${YEAR_END} ] ; then
+	    cdo splityear tmp_${cvar}.nc tmp_${cvar}_
+	    rm -f tmp_${cvar}.nc
+	    if [ ! -f tmp_${cvar}_${YEAR_I}.nc ] ; then
+		if ${missval_extrapolate} ; then
+		    cdo -setyear,${YEAR_I} tmp_${cvar}_$(( YEAR_I+1 )).nc tmp_${cvar}_${YEAR_I}.nc
+		else
+		    #cdo -setrtomiss,-inf,inf -setyear,${YEAR_I} tmp_${cvar}_${YEAR_END}.nc tmp_${cvar}_${YEAR_I}.nc
+		    cdo -setrtoc,-inf,inf,nan -setyear,${YEAR_I} tmp_${cvar}_$(( YEAR_I+1 )).nc tmp_${cvar}_${YEAR_I}.nc
+		fi
+	    elif [ ! -f tmp_${cvar}_$(( YEAR_END+1 ))}.nc ] ; then
+		if ${missval_extrapolate} ; then
+		    cdo -setyear,$(( YEAR_END+1 )) tmp_${cvar}_${YEAR_END}.nc tmp_${cvar}_$(( YEAR_END+1 )).nc
+		else
+		    # TODO set to miss, fix bug that plotting routine does not recognize missval
+		    # and this netcdf error
+		    #+ cdo -O mergetime tmp_co2mass_1850.nc tmp_co2mass_1851.nc tmp_co2mass_1852.nc tmp_co2mass.nc
+		    #Error (cdf_put_att_double) : NetCDF: Attempt to define fill value when data already exists.
+		    #cdo -setrtomiss,-inf,inf -setyear,$(( YEAR_END+1 )) tmp_${cvar}_${YEAR_I}.nc tmp_${cvar}_$(( YEAR_END+1 )).nc
+		    cdo -setrtoc,-inf,inf,nan -setyear,$(( YEAR_END+1 )) tmp_${cvar}_${YEAR_END}.nc tmp_${cvar}_$(( YEAR_END+1 )).nc
+		fi
+	    fi
+            cdo -O mergetime  tmp_${cvar}_????.nc tmp_${cvar}.nc
+	    rm -f tmp_${cvar}_????.nc
+	fi
+    done
+
+    # create the cTotal variable by adding cAtmos cLand and cOcean
+    [ ${ccycle_pisces} == 1 ] && cdo selvar,cOcean ${SUPA_FILE3} tmp_cOcean.nc
+
+    if [ ${ccycle_lpjg} == 1 ] && [ ${ccycle_tm5} == 1 ] && [ ${ccycle_pisces} == 1 ] ; then
+	cdo -O -chvar,cOcean,cTotal -add tmp_cOcean.nc -add tmp_cLand.nc tmp_cAtmos.nc tmp_cTotal.nc
+	ncatted -O -a long_name,cTotal,m,c,"Total Carbon in Atmosphere, Land and Ocean" tmp_cTotal.nc
+    elif [ ${ccycle_lpjg} == 1 ] && [ ${ccycle_pisces} == 1 ] ; then
+	cdo -O -chvar,cOcean,cTotal -add tmp_cOcean.nc tmp_cLand.nc tmp_cTotal.nc
+	ncatted -O -a long_name,cTotal,m,c,"Total Carbon in Land and Ocean" tmp_cTotal.nc
+    else
+	echo "Not producing cTotal variable, modify monitor_ccycle.sh for your config"
+    fi
+
+    # merge all variables in one file
+    cdo merge tmp_*.nc ${SUPA_FILE2}
+    rm -f tmp_*.nc
 
     cd ..
     rm -rf ${TMPD}
@@ -300,6 +361,8 @@ if [ ${IPREPHTML} -eq 0 ]; then
          echo " Concatenate old and new netcdf files... " 
          ncrcat -h ${OLD_SUPA_FILE} ${SUPA_FILE} ${DIAG_D}/${RUN}_${BASE_YEAR_INI}_${YEAR_END}_time-series_ccycle.nc
          rm ${OLD_SUPA_FILE} ${SUPA_FILE}
+	 # remove old SUPA_FILE2 and SUPA_FILE3
+         rm ${OLD_SUPA_FILE2} ${OLD_SUPA_FILE3}
          export SUPA_FILE=${RUN}_${BASE_YEAR_INI}_${YEAR_END}_time-series_ccycle.nc
          echo " Variables saved in ${RUN}_${BASE_YEAR_INI}_${YEAR_END}_time-series_ccycle.nc " ; echo
     fi
@@ -319,7 +382,9 @@ if [ ${IPREPHTML} -eq 1 ]; then
     cd ${DIAG_D}/
 
     ${PYTHON} ${HERE}/scripts/plot_ccycle_time_series.py
-
+    export SUPA_FILE=${SUPA_FILE2}
+    ${PYTHON} ${HERE}/scripts/plot_ccycle_time_series2.py
+    export SUPA_FILE=${SUPA_FILE3}
     ${PYTHON} ${HERE}/scripts/plot_ccycle_time_series2.py
 
     # Configuring HTML display file:
