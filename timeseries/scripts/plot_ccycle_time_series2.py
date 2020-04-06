@@ -47,13 +47,15 @@ nbr   = len(vtime)
 #v_var_names = [ 'cLand' , 'co2s', 'co2mass' ]
 #v_var_names = [ 'cOcean', 'fgco2', 'rivsed', 'corr' ]
 
+vars_excluded = [ 'time', 'lat', 'lon', 'depth', 'Year' ]
+vars_drift = [ 'cLand', 'cOcean', 'cAtmos', 'cTotal' ]
+
 # get all variables which are not dimensions
 vars = id_clim.variables
 dims = id_clim.dimensions
 v_var_names=[]
-excluded_vars = [ 'time', 'lat', 'lon', 'depth' ]
 for var in vars.keys():
-    if var not in dims and var not in excluded_vars:
+    if var not in dims and var not in vars_excluded:
         v_var_names.append(var)
 
 nbvar = len(v_var_names)
@@ -84,8 +86,8 @@ for jv in range(nbvar):
         missval = None
     if not missval is None:
         XX[jv,:]  = nmp.ma.masked_where(XX[jv,:]==missval, XX[jv,:])
-        print("got missval: "+str(missval))
-        print(XX[jv,:])
+        #print("got missval: "+str(missval))
+        #print(XX[jv,:])
 
 id_clim.close()
 
@@ -95,6 +97,9 @@ for jv in range(nbvar):
     cv  = v_var_names[jv]
     cln = v_var_lngnm[jv]
     cfn  = cv+'_year_'+CRUN
+    cfn_drift  = cv+'_year_drift_'+CRUN
+    ct = CRUN+' / '+cv+" : " +cln
+    ct_drift = CRUN+' / '+cv+" drift"
 
     print '   Creating figure '+cfn
 
@@ -107,9 +112,21 @@ for jv in range(nbvar):
     # Time to plot
     #bp.plot_1d_mon_ann(vtime[:], VY, XX[jv,:], FY, cfignm=cfn, dt_year=ittic,
     bp.plot_1d_ann(vtime[:], XX[jv,:], cfignm=cfn, dt_year=ittic,
-                          cyunit=v_var_units[jv], ctitle = CRUN+' / '+cv+" : " +cln,
+                          cyunit=v_var_units[jv], ctitle = ct,
                           cfig_type='svg', l_tranparent_bg=False)
 
+    if cv in vars_drift:
+        print 'plotting drift for '+str(cv)
+        ymin = -0.3 if cv != 'cOcean' else -0.5
+        ymax = -ymin
+        plot_drift1 = True
+        plot_drift20 = True if cv != 'cLand' else False
+        plot_drift100 = True
+        bp.plot_1d_ann_drift(vtime[:], XX[jv,:], cfignm=cfn_drift, dt_year=ittic*2,
+                             cyunit=v_var_units[jv], ctitle = ct_drift,
+                             cfig_type='svg', l_tranparent_bg=False, 
+                             ymin=ymin, ymax=ymax,
+                             plot_drift1=plot_drift1,plot_drift20=plot_drift20,plot_drift100=plot_drift100 )
 
 print 'plot_time_series.py done...\n'
 

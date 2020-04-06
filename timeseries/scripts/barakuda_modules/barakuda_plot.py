@@ -1539,6 +1539,92 @@ def plot_1d_ann(VTy, VDy, cfignm='fig', dt_year=5, cyunit='', ctitle='',
 
 
 
+def plot_1d_ann_drift(VTy, VDy, cfignm='fig', dt_year=5, cyunit='', ctitle='',
+                      ymin=0, ymax=0, dy=0, mnth_col='b', plt_m03=False, plt_m09=False,
+                      cfig_type='png', l_tranparent_bg=True,
+                      plot_drift1=True,plot_drift20=True,plot_drift100=True ):
+
+    font_ttl, font_ylb, font_clb = __font_unity__()
+
+    Nt2 = len(VTy)
+
+    if len(VTy) != len(VDy): print 'ERROR: plot_1d_mon_ann.barakuda_plot => VTy and VDy do not agree in size'; sys.exit(0)
+
+    # convert absolute values to drift
+    VDy_orig = nmp.copy(VDy)
+    VDy_drift1 = nmp.empty(len(VDy))
+    VDy_drift20 = nmp.empty(len(VDy))
+    VDy_drift100 = nmp.empty(len(VDy))
+    VDy_drift1[:] = nmp.nan
+    VDy_drift20[:] = nmp.nan
+    VDy_drift100[:] = nmp.nan
+
+    for i in range(len(VDy)):
+        if i > 0 :
+            VDy_drift1[i] = VDy_orig[i] - VDy_orig[i-1]
+        if i >= 100 :
+            VDy_drift100[i] = nmp.average(VDy_drift1[i-99:i+1])
+        if i >= 20 :
+            VDy_drift20[i] = nmp.average(VDy_drift1[i-19:i+1])
+    VDy = VDy_drift1
+
+    fig = plt.figure(num = 1, figsize=FIG_SIZE_TS, facecolor='w', edgecolor='k')
+
+    ax = plt.axes(AXES_TS)
+
+    plt.plot(VTy, VDy_drift1, '.', color='gray', markersize=1, label='1-yr drift' )
+    if plot_drift20:
+        plt.plot(VTy, VDy_drift20, 'purple', linewidth=0.5, label='20-yr drift')
+    if plot_drift100:
+        plt.plot(VTy, VDy_drift100, 'red', linewidth=1, label='100-yr drift')
+
+    plt.legend(loc='upper left', shadow=False, fancybox=False)
+
+
+    y1 = int(min(VTy))
+    y2 = int(max(VTy))
+
+    # plot +/- 0.1 Pg threshold
+    plt.hlines(-0.1, y1, y2, colors='yellow')
+    plt.hlines( 0.1, y1, y2, colors='green')
+
+    mean_val = float(nmp.nanmean(VDy))
+    df = max( abs(float(nmp.nanmin(VDy))-mean_val), abs(float(nmp.nanmax(VDy))-mean_val) )
+
+    if ymin==0 and ymax==0:
+        plt.axis( [y1, y2, float(nmp.nanmin(VDy))-0.2*df, float(nmp.nanmax(VDy))+0.2*df] )
+    else:
+        plt.axis([y1, y2, ymin,     ymax])
+        if dy != 0: plt.yticks( nmp.arange(trunc(ymin+0.5), trunc(ymax)+dy, dy) )
+
+
+    y_formatter = mpl.ticker.ScalarFormatter(useOffset=False)
+    ax.yaxis.set_major_formatter(y_formatter)
+
+
+    plt.xticks( nmp.arange(y1, y2+dt_year, dt_year) )
+
+    #BUG?:
+    locs, labels = plt.xticks() ; jl=0; newlabels = []
+    for ll in locs: newlabels.append(str(int(locs[jl]))); jl=jl+1
+    plt.xticks(locs,newlabels)
+    #BUG?.
+
+    ax.grid(color='k', linestyle='-', linewidth=0.2)
+
+    plt.ylabel('('+cyunit+')', **font_ylb)
+
+    plt.title(ctitle)
+    
+    cf_fig = cfignm+'.'+cfig_type
+    
+    plt.savefig(cf_fig, dpi=DPI_TS, orientation='portrait', transparent=l_tranparent_bg)
+
+    plt.close(1)
+
+
+
+
 
 
 
@@ -1609,7 +1695,7 @@ def plot_1d_multi(vt, XD, vlabels, cfignm='fig', dt_year=5, i_t_jump=1, cyunit='
         plt.axis([y1, y2, ymin,     ymax])
 
 
-    print 'y1, y2 =', y1, y2 
+    #print 'y1, y2 =', y1, y2 
 
     if lzonal:
         plt.xticks( nmp.arange(y1, y2+10, 10) )

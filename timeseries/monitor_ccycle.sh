@@ -157,8 +157,9 @@ fi
 SUPA_FILE=${DIAG_D}/${RUN}_${YEAR_INI}_${YEAR_END}_time-series_ccycle.nc
 [[ ! -z ${BASE_YEAR_INI} ]] && SUPA_FILE2=${DIAG_D}/${RUN}_${BASE_YEAR_INI}_${YEAR_END}_time-series_ccycle2.nc || SUPA_FILE2=${DIAG_D}/${RUN}_${YEAR_INI}_${YEAR_END}_time-series_ccycle2.nc
 [[ ! -z ${BASE_YEAR_INI} ]] && SUPA_FILE3=${DIAG_D}/${RUN}_${BASE_YEAR_INI}_${YEAR_END}_time-series_ccycle3.nc || SUPA_FILE3=${DIAG_D}/${RUN}_${YEAR_INI}_${YEAR_END}_time-series_ccycle3.nc
+SUPA_FILE_TEST=${DIAG_D}/${RUN}_drift_test.nc
 
-export SUPA_FILE SUPA_FILE2 SUPA_FILE3
+export SUPA_FILE
 
 # ~~~~~~~~~~~~~~~~~~~~~~~`
 
@@ -171,7 +172,7 @@ if [ ${ccycle_lpjg} == 1 ] ; then
     monvars+=" cLand nbp nep fco2nat fco2antt"
     yearvars+=" cLand nbp nep fco2nat fco2antt"
 fi
-[ ${ccycle_tm5} == 1 ] && monvars+=" co2s co2mass cAtmos" && yearvars+=" co2s co2mass cAtmos"
+[ ${ccycle_tm5} == 1 ] && monvars+=" co2s co2mass cAtmos fco2fos" && yearvars+=" co2s co2mass cAtmos fco2fos"
 [ ${ccycle_pisces} == 1 ] && monvars+=" fgco2" && yearvars+=" fgco2"
 
 # should missing values in the first and last years of the yearly timeseries be extrapolated?
@@ -297,6 +298,12 @@ if [ ${IPREPHTML} -eq 0 ]; then
 	tmpf=${DATADIR}/../year/Post_${YEAR_END}/${RUN}_${YEAR_END}_ocean.carbon
 	${PYTHON} ${HERE}/scripts/ocean_carbon_csv2nc.py ${tmpf} ${tmpf}.nc
 	cp ${tmpf}.nc ${SUPA_FILE3}
+
+	# TMP ET test the drift plot with data from a249
+	if [ -f "/gpfs/scratch/bsc32/bsc32051/pub/a249/drift_a249.csv" ] ; then
+	    cp /gpfs/scratch/bsc32/bsc32051/pub/a249/drift_a249.csv ${DATADIR}/../year/drift_test.csv
+	    ${PYTHON} ${HERE}/scripts/csv2nc.py ${DATADIR}/../year/drift_test.csv ${SUPA_FILE_TEST}
+	fi
     fi
 
     # generate yearly diagnostics
@@ -386,6 +393,15 @@ if [ ${IPREPHTML} -eq 1 ]; then
     ${PYTHON} ${HERE}/scripts/plot_ccycle_time_series2.py
     export SUPA_FILE=${SUPA_FILE3}
     ${PYTHON} ${HERE}/scripts/plot_ccycle_time_series2.py
+    
+    # TMP ET test the drift plot with data from a249
+    if [ -f ${SUPA_FILE_TEST} ] ; then
+	export SUPA_FILE=${SUPA_FILE_TEST}
+	RUN_orig=${RUN}
+	export RUN=test
+	${PYTHON} ${HERE}/scripts/plot_ccycle_time_series2.py
+	export RUN=${RUN_orig}
+    fi
 
     # Configuring HTML display file:
     sed -e "s/{TITLE}/Carbon cycle diagnostics for EC-Earth coupled experiment/g" \

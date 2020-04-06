@@ -24,7 +24,7 @@ print('reading '+str(ifile))
 
 # create cetcdf file with time dimension
 # https://iescoders.com/writing-netcdf4-data-in-python/
-ncfile = Dataset(ofile,mode='w',format='NETCDF4_CLASSIC') 
+ncfile = Dataset(ofile,mode='w',format='NETCDF3_CLASSIC') 
 time_dim = ncfile.createDimension('time', None) # unlimited axis (can be appended to).
 var_time = ncfile.createVariable('time', np.float64, ('time',))
 var_time.units = 'hours since 1850-01-01 00:00:00'
@@ -119,4 +119,5 @@ var_fgco2[:] = data_fgco2
 var_corr[:] = data_corr
 
 
+ncfile.close()
 print('wrote '+str(ofile))
