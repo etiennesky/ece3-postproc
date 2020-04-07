@@ -404,8 +404,12 @@ if [ ${IPREPHTML} -eq 1 ]; then
     fi
 
     # Configuring HTML display file:
+    [ ${ccycle_lpjg} == 1 ] && display_lpjg="" || display_lpjg=" ; display:none"
+    [ ${ccycle_pisces} == 1 ] && display_pisces="" || display_pisces=" ; display:none"
+    [ ${ccycle_tm5} == 1 ] && display_tm5="" || display_tm5=" ; display:none"
     sed -e "s/{TITLE}/Carbon cycle diagnostics for EC-Earth coupled experiment/g" \
         -e "s/{RUN}/${RUN}/g" -e "s/{DATE}/`date`/g" -e "s/{HOST}/`hostname`/g" \
+        -e "s/{DISPLAY_TM5}/${display_tm5}/g" \
         ${HERE}/scripts/index_ccycle_skel.html > index.html
     
     
