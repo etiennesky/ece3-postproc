@@ -42,8 +42,8 @@ yearvars2="" #yearly files, obtained from first month of monthly files
 yearvars3="" #yearly files, obtained from annual sum of monthly files
 if [ ${ccycle_lpjg} == 1 ] ; then
     monvars+=" cLand nbp nep fco2nat fco2antt"
-    yearvars+=" cLand cFlux"
-    yearvars3+=" nbp nep fco2nat fco2antt"
+#    yearvars+=" cLand cFlux"
+    yearvars3+=" cLand nbp nep fco2nat fco2antt"
 fi
 [ ${ccycle_tm5} == 1 ] && monvars+=" co2 co2mass fco2fos" && yearvars+=" co2mass" && yearvars2+=" co2s cAtmos" && yearvars3+=" fco2fos"
 [ ${ccycle_pisces} == 1 ] && monvars+=" fgco2" && yearvars3+=" fgco2"
