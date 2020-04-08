@@ -117,7 +117,8 @@ for jv in range(nbvar):
 
     if cv in vars_drift:
         print 'plotting drift for '+str(cv)
-        ymin = -0.3 if cv != 'cOcean' else -0.5
+        #ymin = -0.3 if cv != 'cOcean' else -0.5
+        ymin = -0.5
         ymax = -ymin
         plot_drift1 = True
         plot_drift20 = True if cv != 'cLand' else False

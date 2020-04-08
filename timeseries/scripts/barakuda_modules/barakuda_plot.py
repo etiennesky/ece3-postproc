@@ -1572,7 +1572,8 @@ def plot_1d_ann_drift(VTy, VDy, cfignm='fig', dt_year=5, cyunit='', ctitle='',
 
     ax = plt.axes(AXES_TS)
 
-    plt.plot(VTy, VDy_drift1, '.', color='gray', markersize=1, label='1-yr drift' )
+    #plt.plot(VTy, VDy_drift1, '.', color='gray', markersize=1, label='1-yr drift' )
+    plt.plot(VTy, VDy_drift1, '.', color='gray', markersize=2, label='1-yr drift' )
     if plot_drift20:
         plt.plot(VTy, VDy_drift20, 'purple', linewidth=0.5, label='20-yr drift')
     if plot_drift100:

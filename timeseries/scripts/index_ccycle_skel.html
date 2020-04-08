@@ -125,6 +125,30 @@
 
 	<div id="div_drift">
 
+        <img style="border: 0px solid; width: 1200px" alt="" src="cLand_year_{RUN}.svg"/>
+        <br/><br/><br/>
+        
+        <img style="border: 0px solid; width: 1200px" alt="" src="cOcean_year_{RUN}.svg"/>
+        <br/><br/><br/>
+                
+        <img style="border: 0px solid; width: 1200px" alt="" src="cLand_year_drift_{RUN}.svg"/>
+        <br/><br/><br/>
+        
+        <img style="border: 0px solid; width: 1200px" alt="" src="cOcean_year_drift_{RUN}.svg"/>
+        <br/><br/><br/>
+                
+        </div>
+
+	<hr>
+
+        <br/><br/>
+        
+        <big><big><b>Drift a249:</b></big></big> <a href="#" id="toggle_drift_a249" >Show/hide</a>
+
+        <br/><br/>
+
+	<div id="div_drift">
+
         <img style="border: 0px solid; width: 1200px" alt="" src="cLand_year_test.svg"/>
         <br/><br/><br/>
         
@@ -170,6 +194,12 @@
 	  document.getElementById('div_drift').style.display = '';
 	  else
 	  document.getElementById('div_drift').style.display = 'none';
+	  });
+	  document.getElementById("toggle_drift_a249").addEventListener("click", function() {
+	  if ( document.getElementById('div_drift_a249').style.display == 'none' )
+	  document.getElementById('div_drift_a249').style.display = '';
+	  else
+	  document.getElementById('div_drift_a249').style.display = 'none';
 	  });
 	</script>
 
