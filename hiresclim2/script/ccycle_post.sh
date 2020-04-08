@@ -42,8 +42,13 @@ yearvars2="" #yearly files, obtained from first month of monthly files
 yearvars3="" #yearly files, obtained from annual sum of monthly files
 if [ ${ccycle_lpjg} == 1 ] ; then
     monvars+=" cLand nbp nep fco2nat fco2antt"
-#    yearvars+=" cLand cFlux"
-    yearvars3+=" cLand nbp nep fco2nat fco2antt"
+    yearvars3+=" nbp nep fco2nat fco2antt"
+    # TMP consider that cLand/cFlux are output yearly (requires dev lpjg version) if running tm5
+    if [ ${ccycle_tm5} == 1 ] ; then
+	yearvars+=" cLand cFlux"
+    else
+	yearvars2+=" cLand "
+    fi
 fi
 [ ${ccycle_tm5} == 1 ] && monvars+=" co2 co2mass fco2fos" && yearvars+=" co2mass" && yearvars2+=" co2s cAtmos" && yearvars3+=" fco2fos"
 [ ${ccycle_pisces} == 1 ] && monvars+=" fgco2" && yearvars3+=" fgco2"
@@ -162,6 +167,8 @@ for cvar in ${monvars[*]}; do
 	    $cdo fldsum -mul tmp1.nc area.nc tmp2.nc
 	    $cdo -mulc,86400e-12 -muldpm tmp2.nc tmp3.nc
 	    ncatted -O -a units,$cvar,m,c,"Pg C" tmp3.nc
+	    ncatted -O -a "standard_name",$cvar,a,c,"tendency_of_atmosphere_mass_content_of_carbon_dioxide_expressed_as_carbon_due_to_emission_from_fossil_fuel_combustion" tmp3.nc
+	    ncatted -O -a "long_name",$cvar,m,c,"Carbon Mass Flux into Atmosphere Due to Fossil Fuel Emissions of CO2" tmp3.nc
 	    mv tmp3.nc fco2fos_${year}.nc
 	    rm -f tmp*.nc
 
