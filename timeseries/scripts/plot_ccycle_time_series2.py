@@ -12,10 +12,22 @@ import barakuda_tool as bt
 
 
 CRUN = os.getenv('RUN')
-if CRUN == None: print 'The RUN environement variable is no set'; sys.exit(0)
+if CRUN == None: print 'The RUN environement variable is no set'; sys.exit(1)
 
 SUPA_FILE = os.getenv('SUPA_FILE')
-if SUPA_FILE == None: print 'The SUPA_FILE environement variable is no set'; sys.exit(0)
+if SUPA_FILE == None: print 'The SUPA_FILE environement variable is no set'; sys.exit(1)
+
+PLOT_DRIFT = os.getenv('PLOT_DRIFT')
+if PLOT_DRIFT == None: print 'The PLOT_DRIFT environement variable is no set'; sys.exit(1)
+plot_drift = ( PLOT_DRIFT == "true" )
+
+CCYCLE_TM5 = os.getenv('CCYCLE_TM5')
+if CCYCLE_TM5 == None: print 'The CCYCLE_TM5 environement variable is no set'; sys.exit(1)
+ccycle_tm5 = ( CCYCLE_TM5 == "1" )
+
+ccycle_emiss_fixyear = os.getenv('CCYCLE_EMISS_FIXYEAR')
+if ccycle_emiss_fixyear == None: print 'The CCYCLE_EMISS_FIXYEAR environement variable is no set'; sys.exit(1)
+
 
 print '\n *** plot_ccycle_time_series2.py => USING time series in '+SUPA_FILE
 
@@ -42,13 +54,34 @@ for jv in range(len(dates)):
 
 
 nbr   = len(vtime)
+ittic = bt.iaxe_tick(nbr,10)
 
 #v_var_names = [ 'msl', 'tas', 'totp', 'NetTOA', 'NetSFC', 'PminE', 'e', 'tcc', 'PminE', 'tsr', 'ssr' ]
 #v_var_names = [ 'cLand' , 'co2s', 'co2mass' ]
 #v_var_names = [ 'cOcean', 'fgco2', 'rivsed', 'corr' ]
 
 vars_excluded = [ 'time', 'lat', 'lon', 'depth', 'Year' ]
-vars_drift = [ 'cLand', 'cOcean', 'cAtmos', 'cTotal' ]
+vars_fluxes = [ 'fco2nat', 'fco2antt', 'fgco2', 'fCLandToOcean', 'fTotal' ]
+vars_cpool = [ 'cLand', 'cVeg', 'cProduct', 'cLitter', 'cSoil' ]
+if ccycle_tm5:
+    vars_drift = [ 'cLandYr', 'cOceanYr', 'cAtmosYr', 'cTotalYr' ]
+    vars_drift_cumm = [ 'cLandYr', 'cOceanYr', 'cAtmosYr', 'cTotalYr' ]
+    print("TM5!!!!")
+    if ccycle_emiss_fixyear == "0":
+        print("fix!!")
+        vars_drift_cumm.append('fco2fos')
+        vars_fluxes.append('fco2fos')
+else:
+    vars_drift = [ 'cLandYr', 'cOceanYr', 'cTotalYr' ]
+    vars_drift_cumm = [ 'cLandYr', 'cOceanYr', 'cTotalYr' ]
+# cAtmos cFlux cLand cLand1 cOcean cTotal co2mass co2s fco2antt fco2fos fco2nat fgco2 nbp nep
+
+
+#print("ccycle_tm5: "+str(ccycle_tm5))
+#print("ccycle_emiss_fixyear: "+str(ccycle_emiss_fixyear))
+#print("vars_fluxes: "+str(vars_fluxes))
+#print("vars_drift: "+str(vars_drift))
+#print("vars_drift_cumm: "+str(vars_drift_cumm))
 
 # get all variables which are not dimensions
 vars = id_clim.variables
@@ -67,6 +100,8 @@ print(v_var_names)
 
 
 XX = nmp.zeros(nbvar*nbr) ; XX.shape = [nbvar, nbr]
+XX_cumm = nmp.zeros(nbvar*nbr) ; XX_cumm.shape = [nbvar, nbr]
+XX_drift = nmp.zeros(nbvar*nbr) ; XX_drift.shape = [nbvar, nbr]
 
 for jv in range(nbvar):
     print ' **** reading '+v_var_names[jv]
@@ -86,14 +121,77 @@ for jv in range(nbvar):
         missval = None
     if not missval is None:
         XX[jv,:]  = nmp.ma.masked_where(XX[jv,:]==missval, XX[jv,:])
-        #print("got missval: "+str(missval))
-        #print(XX[jv,:])
+
+    # compute cummulative values and cumulative drift
+    if nbr > 1:
+
+        # compute cummulative values
+        XX_cumm[jv,0] = 0 if nmp.isnan(XX[jv,0]) else XX[jv,0]
+        for i in range(nbr):
+            if i > 0 :
+                XX_cumm[jv,i] = XX_cumm[jv,i-1] if nmp.isnan(XX[jv,i]) else XX_cumm[jv,i-1] + XX[jv,i] 
+    
+        # compute drift values
+        inival = XX[jv,1] if nmp.isnan(XX[jv,0]) else XX[jv,0]
+        XX_drift[jv,0] = 0
+        for i in range(nbr):
+            if i > 0 :
+                XX_drift[jv,i] = XX_drift[jv,i-1] if nmp.isnan(XX[jv,i]) else XX[jv,i] - inival
+
+        # replace the fco2fos drift value with cumulative value so we can plot together with the drifts
+        if v_var_names[jv] == "fco2fos":
+            XX_drift[jv,:] = XX_cumm[jv,:]       
+        
 
 id_clim.close()
 
 
-for jv in range(nbvar):
 
+if plot_drift:
+   
+    cfn  = 'fluxes_year_'+CRUN
+    ct = CRUN+" / fluxes"
+    cyunit='Pg C'
+    print '   Creating figure '+cfn
+    bp.plot_1d_ann_multi(vtime[:], XX, v_var_names, vars_fluxes, cfignm=cfn, dt_year=ittic,
+                          cyunit=cyunit, ctitle = ct,
+                          cfig_type='svg', l_tranparent_bg=False)
+
+    cfn  = 'fluxes_cumm_year_'+CRUN
+    ct = CRUN+" / cummulative fluxes"
+    cyunit='Pg C'
+    print '   Creating figure '+cfn
+    bp.plot_1d_ann_multi(vtime[:], XX_cumm, v_var_names, vars_fluxes, cfignm=cfn, dt_year=ittic,
+                          cyunit=cyunit, ctitle = ct,
+                          cfig_type='svg', l_tranparent_bg=False)
+
+    cfn  = 'drift_cumm_year_'+CRUN
+    ct = CRUN+" / cummulative drift"
+    cyunit='Pg C'
+    print '   Creating figure '+cfn
+    bp.plot_1d_ann_multi(vtime[:], XX_drift, v_var_names, vars_drift_cumm, cfignm=cfn, dt_year=ittic,
+                          cyunit=cyunit, ctitle = ct,
+                          cfig_type='svg', l_tranparent_bg=False, plot_drift=0.1)
+
+#    cfn  = 'carbon_land_'+CRUN
+#    ct = CRUN+" / land carbon pools"
+#    cyunit='Pg C'
+#    print '   Creating figure '+cfn
+#    bp.plot_1d_ann_multi(vtime[:], XX, v_var_names, vars_cpool, cfignm=cfn, dt_year=ittic,
+#                          cyunit=cyunit, ctitle = ct,
+#                          cfig_type='svg', l_tranparent_bg=False, plot_drift=0.1)
+
+#    cfn  = 'drift_carbon_land_'+CRUN
+#    ct = CRUN+" / land carbon drift"
+#    cyunit='Pg C'
+#    print '   Creating figure '+cfn
+#    bp.plot_1d_ann_multi(vtime[:], XX_drift, v_var_names, vars_cpool, cfignm=cfn, dt_year=ittic,
+#                          cyunit=cyunit, ctitle = ct,
+#                          cfig_type='svg', l_tranparent_bg=False, plot_drift=0.1)
+
+
+for jv in range(nbvar):
+    
     cv  = v_var_names[jv]
     cln = v_var_lngnm[jv]
     cfn  = cv+'_year_'+CRUN
@@ -107,7 +205,7 @@ for jv in range(nbvar):
     #VY, FY = bt.monthly_2_annual(vtime[:], XX[jv,:])
 
     #ittic = bt.iaxe_tick(nbr/12)
-    ittic = bt.iaxe_tick(nbr)
+    #ittic = bt.iaxe_tick(nbr,10)
 
     # Time to plot
     #bp.plot_1d_mon_ann(vtime[:], VY, XX[jv,:], FY, cfignm=cfn, dt_year=ittic,
@@ -115,15 +213,19 @@ for jv in range(nbvar):
                           cyunit=v_var_units[jv], ctitle = ct,
                           cfig_type='svg', l_tranparent_bg=False)
 
-    if cv in vars_drift:
+    if plot_drift and cv in vars_drift:
         print 'plotting drift for '+str(cv)
         #ymin = -0.3 if cv != 'cOcean' else -0.5
-        ymin = -0.5
+#        ymin = -0.5
+        ymin = -1
         ymax = -ymin
         plot_drift1 = True
-        plot_drift20 = True if cv != 'cLand' else False
+        #plot_drift20 = True if ( cv != 'cLand' and cv != 'cLand1' ) else False
+        plot_drift20 = True
         plot_drift100 = True
-        bp.plot_1d_ann_drift(vtime[:], XX[jv,:], cfignm=cfn_drift, dt_year=ittic*2,
+        # TODO check plots have same range, dt_year param seems to influence this
+        #bp.plot_1d_ann_drift(vtime[:], XX[jv,:], cfignm=cfn_drift, dt_year=ittic*2,
+        bp.plot_1d_ann_drift(vtime[:], XX[jv,:], cfignm=cfn_drift, dt_year=ittic,
                              cyunit=v_var_units[jv], ctitle = ct_drift,
                              cfig_type='svg', l_tranparent_bg=False, 
                              ymin=ymin, ymax=ymax,

@@ -48,7 +48,7 @@ v_var_names=[]
 excluded_vars = [ 'time', 'lat', 'lon', 'depth' ]
 for var in vars.keys():
     if var not in dims and var not in excluded_vars:
-        print(var)
+        #print(var)
         v_var_names.append(var)
 
 

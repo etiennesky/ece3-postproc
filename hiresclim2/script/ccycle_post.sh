@@ -38,20 +38,13 @@ eval_dirs 1
 # define vars to process
 monvars="" #monthly files
 yearvars="" #yearly files
-yearvars2="" #yearly files, obtained from first month of monthly files
-yearvars3="" #yearly files, obtained from annual sum of monthly files
 if [ ${ccycle_lpjg} == 1 ] ; then
-    monvars+=" cLand nbp nep fco2nat fco2antt"
-    yearvars3+=" nbp nep fco2nat fco2antt"
-    # TMP consider that cLand/cFlux are output yearly (requires dev lpjg version) if running tm5
-    if [ ${ccycle_tm5} == 1 ] ; then
-	yearvars+=" cLand cFlux"
-    else
-	yearvars2+=" cLand "
-    fi
+    monvars+=" cLand cVeg cProduct cLitter cSoil cLand1 nbp nep fco2nat fco2antt fCLandToOcean npp gpp"
+    yearvars+=" cLandYr cFluxYr"
 fi
-[ ${ccycle_tm5} == 1 ] && monvars+=" co2 co2mass fco2fos" && yearvars+=" co2mass" && yearvars2+=" co2s cAtmos" && yearvars3+=" fco2fos"
-[ ${ccycle_pisces} == 1 ] && monvars+=" fgco2" && yearvars3+=" fgco2"
+[ ${ccycle_tm5} == 1 ] && monvars+=" co2 co2mass" && yearvars+=" co2Yr co2massYr"
+[ ${ccycle_tm5} == 1 ] && [ ${ccycle_emiss_fixyear} == 0 ] && monvars+=" fco2fos"
+[ ${ccycle_pisces} == 1 ] && monvars+=" fgco2"
 
 
 # process monthly vars, usually from cmor output
@@ -75,22 +68,56 @@ for cvar in ${monvars[*]}; do
     ifile=""
     flux=false
     pg_carbon=false
+    # state vars
     if [ $cvar = "cLand" ] ; then
         cmor_table="Emon"
         oper="fldsum"
-	pg_carbon=true
+        pg_carbon=true
+    elif [ $cvar = "cVeg" ] ; then
+        cmor_table="Lmon"
+        oper="fldsum"
+        pg_carbon=true
+    elif [ $cvar = "cProduct" ] ; then
+        cmor_table="Lmon"
+        oper="fldsum"
+        pg_carbon=true
+    elif [ $cvar = "cLitter" ] ; then
+        cmor_table="Lmon"
+        oper="fldsum"
+        pg_carbon=true
+    elif [ $cvar = "cSoil" ] ; then
+        cmor_table="Emon"
+        oper="fldsum"
+        pg_carbon=true
+    elif [ $cvar = "cLand1" ] ; then
+        cmor_table="Emon"
+        oper="fldsum"
+        pg_carbon=true
+    # flux vars
     elif [ $cvar = "nbp" ] ; then
         cmor_table="Lmon"
         oper="fldsum"
-	flux=true
-	pg_carbon=true
+        flux=true
+        pg_carbon=true
     elif [ $cvar = "nep" ] ; then
         cmor_table="Emon"
         oper="fldsum"
 	flux=true
 	pg_carbon=true
+    elif [ $cvar = "npp" ] ; then
+        cmor_table="Lmon"
+        oper="fldsum"
+	flux=true
+	pg_carbon=true
+    elif [ $cvar = "gpp" ] ; then
+        cmor_table="Lmon"
+        oper="fldsum"
+	flux=true
+	pg_carbon=true
     elif [ $cvar = "fco2nat" ] ; then
         cmor_table="Amon"
+	# TMP ET this requires new cmorization!
+        #cmor_table="Lmon"
         oper="fldsum"
 	flux=true
 	pg_carbon=true
@@ -99,17 +126,24 @@ for cvar in ${monvars[*]}; do
         oper="fldsum"
 	flux=true
 	pg_carbon=true
+    elif [ $cvar = "fCLandToOcean" ] ; then
+        cmor_table="Emon"
+        oper="fldsum"
+	flux=true
+	pg_carbon=true
     elif [ $cvar = "fgco2" ] ; then
         cmor_table="Omon"
         oper="fldsum"
 	flux=true
 	pg_carbon=true
+    # co2 vars
     elif [ $cvar = "co2" ] ; then
         cmor_table="Amon"
         oper="fldmean"
     elif [ $cvar = "co2mass" ] ; then
         cmor_table="Amon"
         oper=""
+    # disabling this temporarily, to be done offline with script compute_fco2fos.sh
     elif [ $cvar = "fco2fos" ] ; then
         cmor_table=""
         oper=""
@@ -139,14 +173,12 @@ for cvar in ${monvars[*]}; do
 
 	# use pre-computed fco2fos timeseries if it is found
 	# once done the first time copy it outside the experiment folder since it will never change
-	if [ -f ${ECE3_POSTPROC_DATADIR}/tm5/CMIP6/${ifile} ] ; then
+	if [ -f ${ECE3_POSTPROC_DATADIR}/tm5/CMIP6/fco2fos.nc ] ; then
 	    ifile=fco2fos.nc
 	    cp ${ECE3_POSTPROC_DATADIR}/tm5/CMIP6/${ifile} ${idir}
-	else
+	elif [ -f ${ECE3_POSTPROC_DATADIR}/tm5/CMIP6/fco2fos_${year}.nc ] ; then
 	    ifile=fco2fos_${year}.nc
-	    [ -f ${ECE3_POSTPROC_DATADIR}/tm5/CMIP6/${ifile} ] && \
 	    cp ${ECE3_POSTPROC_DATADIR}/tm5/CMIP6/${ifile} ${idir}
-
 	fi
 	if [ ! -f ${idir}/${ifile} ] ; then
 	    rm -f fco2fos*.nc
@@ -193,6 +225,17 @@ for cvar in ${monvars[*]}; do
     # copy file (foing subset/fix/operation if required)
     if [ $cvar = "co2" ] ; then
 	$cdo setctomiss,nan ${idir}/${ifile} ${ifile}
+    elif [ $cvar = "fgco2" ] ; then
+	# TODO put these somewhere else
+	mask=/gpfs/projects/bsc32/models/ecearth/v3.3.3_c-cycle/inidata/nemo/initial/ORCA1L75/nemo-mask-ece.nc
+	# cdo griddes selvar,tos ../18500101/fc0/runtime/output/nemo/001/a2vq_1m_18500101_18501231_opa_grid_T_2D.nc > grid-nemo-raw.txt
+	# remove area section in grid-nemo-raw.txt
+	grid=/gpfs/projects/bsc32/models/ecearth/v3.3.3_c-cycle/inidata/nemo/initial/ORCA1L75/grid-nemo-raw.txt
+	rm -f tmp?.nc
+	$cdo -f nc setgrid,${grid} -selvar,${cvar} ${idir}/${ifile} tmp1.nc
+	ncks -v ${cvar} tmp1.nc tmp2.nc
+	$cdo -L -selindexbox,2,361,2,292 -mul tmp2.nc ${mask} ${ifile}
+	rm -f tmp?.nc
     elif [ $cvar = "fco2fos" ] ; then
 	$cdo selyear,$year ${idir}/${ifile}  ${ifile}
     else
@@ -238,17 +281,19 @@ for cvar in ${monvars[*]}; do
 
     # add co2s which is co2 at near-surface in ppm
     if [ $cvar = "co2" ] ; then
+	tmpvar=co2s
         $cdo sellevel,92500 ${out}_${cvar}.nc tmp1.nc
-        ncap2 -O -v -s "co2s=co2*1e6" tmp1.nc ${out}_co2s.nc
-	ncatted -O -a units,co2s,m,c,"ppm" ${out}_co2s.nc
-	ncatted -O -a long_name,co2s,m,c,"CO2 concentration at 925 hPa" ${out}_co2s.nc
+        ncap2 -O -v -s "${tmpvar}=co2*1e6" tmp1.nc ${out}_${tmpvar}.nc
+	ncatted -O -a units,${tmpvar},m,c,"ppm" ${out}_${tmpvar}.nc
+	ncatted -O -a long_name,${tmpvar},m,c,"CO2 concentration at 925 hPa" ${out}_${tmpvar}.nc
     fi
 
     # convert co2mass (kg CO2) to cAtmos (Pg C)
     if [ $cvar = "co2mass" ] ; then
-        ncap2 -O -v -s "cAtmos=co2mass*2.72727273e-13" ${out}_co2mass.nc ${out}_cAtmos.nc
-	ncatted -O -a units,cAtmos,m,c,"Pg C" ${out}_cAtmos.nc
-	ncatted -O -a long_name,cAtmos,m,c,"Total Carbon in Atmosphere (TM5)" ${out}_cAtmos.nc
+	tmpvar=cAtmos
+        ncap2 -O -v -s "${tmpvar}=co2mass*2.72727273e-13" ${out}_co2mass.nc ${out}_${tmpvar}.nc
+	ncatted -O -a units,${tmpvar},m,c,"Pg C" ${out}_${tmpvar}.nc
+	ncatted -O -a long_name,${tmpvar},m,c,"Total Carbon in Atmosphere (TM5)" ${out}_${tmpvar}.nc
     #elif [ $cvar = "cLand" ] ; then
     #    ncap2 -O -v -s "$cvar=$cvar*1e-12" ${out}_${cvar}.nc tmp1.nc
     #	 ncatted -O -a units,$cvar,m,c,"Pg C" tmp1.nc ${out}_${cvar}.nc
@@ -286,19 +331,26 @@ for cvar in ${yearvars[*]}; do
     ifile=""
     factor=""
     flux=false
+    pg_carbon=false
     shiftyear=false
-    if [ $cvar = "cLand" ] ; then
+    if [ $cvar = "cLandYr" ] ; then
         cmor_table="Eyr"
         oper="fldsum"
 	pg_carbon=true
-	shiftyear=true
-    elif [ $cvar = "cFlux" ] ; then
+	#shiftyear=true
+    elif [ $cvar = "cFluxYr" ] ; then
         cmor_table="Eyr"
         oper="fldsum"
-	flux=true
+	#flux=true
 	pg_carbon=true
-	shiftyear=true
-    elif [ $cvar = "co2mass" ] ; then
+	#shiftyear=true
+    elif [ $cvar = "co2Yr" ] ; then
+        cmor_table=""
+        oper="fldmean"
+	idir=${TM5RESULTS}
+	ifile=$( cd ${idir} && ls co2_AERday_*_${year}0101-${year}1231.nc )
+	ifile_area=$( cd ${idir} && ls co2_AERday_*_${year}0101-${year}1231.nc )
+    elif [ $cvar = "co2massYr" ] ; then
         cmor_table=""
         oper="fldsum"
 	idir=${TM5RESULTS}
@@ -319,8 +371,10 @@ for cvar in ${yearvars[*]}; do
     fi
 
     # copy file (making subset/fix if required)
-    if [ $cvar = "co2mass" ] ; then
-	$cdo -seltimestep,1 ${idir}/${ifile} ${ifile}
+    if [ $cvar = "co2Yr" ] ; then
+	$cdo -f nc -chname,co2,co2Yr -seltimestep,1 ${idir}/${ifile} ${ifile}
+    elif [ $cvar = "co2massYr" ] ; then
+	$cdo -f nc -chname,co2mass,co2massYr -seltimestep,1 ${idir}/${ifile} ${ifile}
     #use the first month of Emon/cLand if we don't have Eyr/cLand
     #elif [ $cvar = "cLand" ] ; then
 	#$cdo -seltimestep,1 ${idir}/${ifile} ${ifile}
@@ -331,7 +385,7 @@ for cvar in ${yearvars[*]}; do
 
     # perform operation
     if [ $oper = "fldsum" ] ; then
-	[ $cvar = "co2mass" ] && cp ${idir}/areacella_*.nc area.nc || $cdo -f nc gridarea ${ifile} area.nc
+	[ $cvar = "co2massYr" ] && cp ${idir}/areacella_*.nc area.nc || $cdo -f nc gridarea ${ifile} area.nc
         #$cdo mul ${ifile} area.nc tmp2.nc
         #$cdo fldsum tmp2.nc tmp1.nc
  	$cdo -f nc -fldsum -mul ${ifile} area.nc tmp1.nc
@@ -369,11 +423,21 @@ for cvar in ${yearvars[*]}; do
     fi
     mv tmp3.nc ${out}_${cvar}.nc
 
+    # add co2s which is co2 at near-surface in ppm
+    if [ $cvar = "co2Yr" ] ; then
+	tmpvar=co2sYr
+        $cdo sellevel,1 ${out}_${cvar}.nc tmp1.nc
+        ncap2 -O -v -s "${tmpvar}=co2Yr*1e6" tmp1.nc ${out}_${tmpvar}.nc
+	ncatted -O -a units,${tmpvar},m,c,"ppm" ${out}_${tmpvar}.nc
+	ncatted -O -a long_name,${tmpvar},m,c,"CO2 concentration at near-surface" ${out}_${tmpvar}.nc
+    fi
+
     # convert co2mass (kg CO2) to cAtmos (Pg C)
-    if [ $cvar = "co2mass" ] ; then
-        ncap2 -O -v -s "cAtmos=co2mass*2.72727273e-13" ${out}_co2mass.nc ${out}_cAtmos.nc
-	ncatted -O -a units,cAtmos,m,c,"Pg C" ${out}_cAtmos.nc
-	ncatted -O -a long_name,cAtmos,m,c,"Total Carbon in Atmosphere" ${out}_cAtmos.nc
+    if [ $cvar = "co2massYr" ] ; then
+	tmpvar=cAtmosYr
+        ncap2 -O -v -s "${tmpvar}=co2massYr*2.72727273e-13" ${out}_co2massYr.nc ${out}_${tmpvar}.nc
+	ncatted -O -a units,${tmpvar},m,c,"Pg C" ${out}_${tmpvar}.nc
+	ncatted -O -a long_name,${tmpvar},m,c,"Total Carbon in Atmosphere" ${out}_${tmpvar}.nc
     #elif [ $cvar = "cLand" ] ; then
     #    ncap2 -O -v -s "$cvar=$cvar*1e-12" ${out}_${cvar}.nc tmp1.nc
     # 	 ncatted -O -a units,$cvar,m,c,"Pg C" tmp1.nc ${out}_${cvar}.nc
@@ -383,17 +447,6 @@ for cvar in ${yearvars[*]}; do
 
 done
 
-
-# loop over yearly vars
-for cvar in ${yearvars2[*]}; do
-    $cdo -seltimestep,1 $OUTDIR/${expname}_${year}_${cvar}.nc $OUTDIR2/${expname}_${year}_${cvar}.nc
-done
-
-for cvar in ${yearvars3[*]}; do
-    #$cdo yearsum $OUTDIR/${expname}_${year}_${cvar}.nc $OUTDIR2/${expname}_${year}_${cvar}.nc
-    #$cdo shifttime,"+1year" -settime,0 -setday,1 -setmon,1 -yearsum $OUTDIR/${expname}_${year}_${cvar}.nc $OUTDIR2/${expname}_${year}_${cvar}.nc
-    $cdo -O setdate,$(( year+1 ))-01-01 -yearsum $OUTDIR/${expname}_${year}_${cvar}.nc $OUTDIR2/${expname}_${year}_${cvar}.nc
-done
 
 cd -
 rm -rf $WRKDIR

@@ -7,24 +7,44 @@ import csv
 from datetime import date, time, datetime, timedelta
 
 def Usage():
-    print('usage: ocean_carbon_csv2nc.py csv_file nc_file')
+    print('usage: ocean_carbon_csv2nc.py csv_file_in nc_file_out csv_file_out')
     sys.exit( 1 )
 
-if len(sys.argv) < 2:
+if len(sys.argv) < 4:
     Usage()
 
 ifile=sys.argv[1]
-ofile=sys.argv[2]
+ofile_nc=sys.argv[2]
+ofile_csv=sys.argv[3]
 
 if not os.path.exists(ifile):
     print('ifile '+ifile+' not found')
     Usage()
 
-print('reading '+str(ifile))
+print('reading '+str(ifile)+' and writing '+str(ofile_csv))
 
-# create cetcdf file with time dimension
+# open csv file to get # of rows and make copy without duplicates
+csv_file_in=open(ifile)
+csv_file_out=open(ofile_csv, 'w')
+csv_reader = csv.DictReader(csv_file_in, delimiter=' ', skipinitialspace=True)
+csv_writer = csv.DictWriter(csv_file_out, delimiter=' ', fieldnames=csv_reader.fieldnames)
+csv_writer.writeheader()
+#count = sum(1 for _ in csv_reader)
+count=0
+prev=None
+for row in csv_reader:
+    #print(row)
+    # remove duplicates
+    if prev==None or prev!=row['date']:
+       count=count+1
+       csv_writer.writerow(row)
+    prev=row['date']
+csv_file_in.close()
+csv_file_out.close()
+
+# create netcdf file with time dimension
 # https://iescoders.com/writing-netcdf4-data-in-python/
-ncfile = Dataset(ofile,mode='w',format='NETCDF3_CLASSIC') 
+ncfile = Dataset(ofile_nc,mode='w',format='NETCDF3_CLASSIC') 
 time_dim = ncfile.createDimension('time', None) # unlimited axis (can be appended to).
 var_time = ncfile.createVariable('time', np.float64, ('time',))
 var_time.units = 'hours since 1850-01-01 00:00:00'
@@ -38,7 +58,7 @@ var_time.standard_name = 'time'
 #temp.units = 'K' # degrees Kelvin
 #temp.standard_name = 'air_temperature' # this is a CF standard name
 
-var_totc = ncfile.createVariable('cOcean',np.float64,('time'))
+var_totc = ncfile.createVariable('cOceanYr',np.float64,('time'))
 var_totc.units = 'Pg C'
 var_totc.long_name = 'Total Carbon in Ocean (PISCES)'
 #var_totc.standard_name = 'cOcean'
@@ -56,12 +76,6 @@ var_corr = ncfile.createVariable('corr_p4z',np.float64,('time'))
 var_corr.units = 'Pg C'
 var_corr.long_name = 'C mass damping flux (PISCES)'
 
-# open csv file and to get # of rows
-csv_file=open(ifile)
-csv_reader = csv.DictReader(csv_file, delimiter=' ', skipinitialspace=True)
-count = sum(1 for _ in csv_reader)
-
-
 # initialize data and time arrays
 ntimes = count + 1 #add one for the first chunk
 data_time = np.zeros(ntimes)
@@ -71,16 +85,17 @@ data_fgco2 = np.zeros(ntimes)
 data_corr = np.zeros(ntimes)
 
 # parse csv files populating data arrays
-csv_file.seek(0)
-csv_reader = csv.DictReader(csv_file, delimiter=' ', skipinitialspace=True)
+# open csv file and to get # of rows
+csv_file_in=open(ofile_csv)
+csv_reader = csv.DictReader(csv_file_in, delimiter=' ', skipinitialspace=True)
+#csv_file_in.seek(0)
+#csv_reader = csv.DictReader(csv_file_in, delimiter=' ', skipinitialspace=True)
 #print(dir(csv_reader))
 i=0
 for row in csv_reader:
     #print type(row)
     #print row
-    # adjust date by 1 day
     date1 = datetime.strptime(row['date'], '%Y%m%d')
-    date2 = date1+timedelta(days=1)
 #        print("{0.year:4d}{0.month:02d}{0.day:02d}".format(date1))
 #        print("{0.year:4d}{0.month:02d}{0.day:02d}".format(date2))
     #row['date'] = "{0.year:4d}{0.month:02d}{0.day:02d}".format(date2)
@@ -92,7 +107,8 @@ for row in csv_reader:
 
     # this assumes yearly chunks, adapt if necessary
     if (i==0):
-        date0 = datetime(date1.year,1,1)
+        #date0 = datetime(date1.year,1,1)
+        date0 = datetime(date1.year-1,1,1)
         data_time[i] = date2num(date0,units=var_time.units,calendar=var_time.calendar)
         data_totc[i] = row['TotC-t1-PgC']
         data_rivsed[i] = 0 #row['riv+sed-PgC']
@@ -100,7 +116,12 @@ for row in csv_reader:
         data_corr[i] = 0 #row['corr-PgC']
         i=i+1
 
-    data_time[i] = date2num(date2,units=var_time.units,calendar=var_time.calendar)
+    # adjust date by + 1 day
+    #date2 = date1+timedelta(days=1)
+    ts = date2num(datetime(date1.year,1,1),units=var_time.units,calendar=var_time.calendar)
+    if data_time[i-1] == ts:
+        i=i-1
+    data_time[i] = ts
     data_totc[i] = row['TotC-t2-PgC']
     data_rivsed[i] = row['riv+sed-PgC']
     data_fgco2[i] = row['fgco2-PgC']
@@ -109,8 +130,8 @@ for row in csv_reader:
     i=i+1
 
 
-#print(data_totc)
 #print(data_time)
+#print(data_totc)
 
 var_time[:] = data_time[:]
 var_totc[:] = data_totc
@@ -120,4 +141,4 @@ var_corr[:] = data_corr
 
 
 ncfile.close()
-print('wrote '+str(ofile))
+print('wrote '+str(ofile_nc))

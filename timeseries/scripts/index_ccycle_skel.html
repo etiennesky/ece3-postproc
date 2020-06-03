@@ -22,152 +22,211 @@
 
 	<hr>
 
+        <big><big><b>Diags:</b></big></big> 
+	  <a href=diags_mon_{RUN}.csv>mon</a>  
+	  <a href=diags_mean_{RUN}.csv>mean</a>  
+	  <a href=diags_flux_{RUN}.csv>flux</a>  
+	  <a href=diags_year_{RUN}.csv>year</a>  
+	  <a href=diags_pisces_{RUN}.csv>pisces</a>  
+
+	<hr>
+
+        <big><big><b>Drift:</b></big></big> <a href="#" id="toggle_drift" >Show/hide</a>
+        <br/><br/>
+
+	<div id="div_drift">
+
+<!--
+        <img style="border: 0px solid; width: 1200px" alt="" src="cLand_year_{RUN}.svg"/>
+        <br/><br/>
+
+        <img style="border: 0px solid; width: 1200px" alt="" src="cLand1_year_{RUN}.svg"/>
+        <br/><br/>
+
+        <img style="border: 0px solid; width: 1200px" alt="" src="cOcean_year_{RUN}.svg"/>
+        <br/><br/>
+-->
+                
+<!--        <img style="border: 0px solid; width: 1200px" alt="" src="cTotal_year_drift_{RUN}.svg"/> -->
+        <img style="border: 0px solid; width: 1200px" alt="" src="cTotalYr_year_{RUN}.svg"/>
+        <br/><br/>
+
+        <img style="border: 0px solid; width: 1200px" alt="" src="cLandYr_year_drift_{RUN}.svg"/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="cLandYr_year_{RUN}.svg"/>
         <br/><br/>
         
-        <big><big><b>Monthly variables:</b></big></big> <a href="#" id="toggle_month" >Show/hide</a>
+        <img style="border: 0px solid; width: 1200px" alt="" src="cOceanYr_year_drift_{RUN}.svg"/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="cOceanYr_year_{RUN}.svg"/>
+        <br/><br/>
+
+        <div style="{DISPLAY_TM5}">
+        <img style="border: 0px solid; width: 1200px" alt="" src="cAtmosYr_year_drift_{RUN}.svg"/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="cAtmosYr_year_{RUN}.svg" />
+        <br/><br/>	
+        </div>
+
+        <img style="border: 0px solid; width: 1200px" alt="" src="drift_cumm_year_{RUN}.svg"/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="fluxes_cumm_year_{RUN}.svg"/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="fluxes_year_{RUN}.svg"/>
+
+	<!--
+        <img style="border: 0px solid; width: 1200px" alt="" src="carbon_land_{RUN}.svg"/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="drift_carbon_land_{RUN}.svg"/>
+
+        <img style="border: 0px solid; width: 1200px" alt="" src="carbon_land_m1_{RUN}.svg"/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="drift_carbon_land_m1_{RUN}.svg"/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="carbon_land_m12_{RUN}.svg"/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="drift_carbon_land_m12_{RUN}.svg"/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="carbon_land_mean_{RUN}.svg"/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="carbon_land_flux_{RUN}.svg"/>
+	-->
+
+        <img style="border: 0px solid; width: 1200px" alt="" src="drift_carbon_land_mean_{RUN}.svg"/>
+
 
         <br/><br/>
 
-	<div id="div_month">
-
-        <img style="border: 0px solid; width: 1200px <DISPLAY_TM5>" alt="" src="co2s_{RUN}.svg" />
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px <DISPLAY_TM5>" alt="" src="co2mass_{RUN}.svg"/>
-        <br/><br/><br/>
-
-        <img style="border: 0px solid; width: 1200px" alt="" src="cLand_{RUN}.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px <DISPLAY_TM5>" alt="" src="cAtmos_{RUN}.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px" alt="" src="nep_{RUN}.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px" alt="" src="nbp_{RUN}.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px" alt="" src="fco2nat_{RUN}.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px" alt="" src="fco2antt_{RUN}.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px" alt="" src="fgco2_{RUN}.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px <DISPLAY_TM5>" alt="" src="fco2fos_{RUN}.svg"/>
-        <br/><br/><br/>
-        
         </div>
 	
 	<hr>
 
-        <big><big><b>Yearly variables:</b></big></big> <a href="#" id="toggle_year" >Show/hide</a>
+        <big><big><b>Other variables:</b></big></big> <a href="#" id="toggle_other" >Show/hide</a>
+        <br/><br/>
 
+	<div id="div_other">
+
+        <img style="border: 0px solid; width: 1200px" alt="" src="../atmosphere/NetSFC_{RUN}.svg"/>
+        <br/><br/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="../atmosphere/NetTOA_{RUN}.svg"/>
+        <br/><br/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="../atmosphere/tas_{RUN}.svg"/>
+        <br/><br/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="../ocean/max_amoc_40N_{RUN}.svg"/>
+        <br/><br/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="../ocean/sosstsst_{RUN}.svg"/>
+
+        <br/><br/>
+
+        </div>
+        
+	<hr>
+
+        <big><big><b>Yearly variables:</b></big></big> <a href="#" id="toggle_year" >Show/hide</a>
         <br/><br/>
 
 	<div id="div_year">
 
-        <img style="border: 0px solid; width: 1200px <DISPLAY_TM5>" alt="" src="co2s_year_{RUN}.svg"/>
-        <br/><br/><br/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="cTotalYr_year_{RUN}.svg"/>
+        <br/><br/>
         
-        <img style="border: 0px solid; width: 1200px" alt="" src="cTotal_year_{RUN}.svg"/>
-        <br/><br/><br/>
+        <div style="{DISPLAY_TM5}">
+        <img style="border: 0px solid; width: 1200px" alt="" src="cAtmosYr_year_{RUN}.svg" />
+        <br/><br/>
+        <!--
+        <img style="border: 0px solid; width: 1200px" alt="" src="fco2fos_year_{RUN}.svg" />
+        <br/><br/>
+	-->
+        <img style="border: 0px solid; width: 1200px" alt="" src="co2sYr_year_{RUN}.svg" />
+        <br/><br/>
+        </div>
         
-        <img style="border: 0px solid; width: 1200px <DISPLAY_TM5>" alt="" src="cAtmos_year_{RUN}.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px" alt="" src="cLand_year_{RUN}.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px" alt="" src="cOcean_year_{RUN}.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px" alt="" src="fgco2_year_{RUN}.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px" alt="" src="fgco2_p4z_year_{RUN}.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px <DISPLAY_TM5>" alt="" src="fco2fos_year_{RUN}.svg"/>
-        <br/><br/><br/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="cLandYr_year_{RUN}.svg"/>
+        <br/><br/>
         
         <img style="border: 0px solid; width: 1200px" alt="" src="fco2nat_year_{RUN}.svg"/>
-        <br/><br/><br/>
+        <br/><br/>
         
         <img style="border: 0px solid; width: 1200px" alt="" src="fco2antt_year_{RUN}.svg"/>
-        <br/><br/><br/>
+        <br/><br/>
+        
+	<!--
+        <img style="border: 0px solid; width: 1200px" alt="" src="cLand1_year_{RUN}.svg"/>
+        <br/><br/>
         
         <img style="border: 0px solid; width: 1200px" alt="" src="nep_year_{RUN}.svg"/>
-        <br/><br/><br/>
+        <br/><br/>
         
         <img style="border: 0px solid; width: 1200px" alt="" src="nbp_year_{RUN}.svg"/>
-        <br/><br/><br/>
+        <br/><br/>
+	-->
         
+        <img style="border: 0px solid; width: 1200px" alt="" src="cOceanYr_year_{RUN}.svg"/>
+        <br/><br/>
+
+        <!--
+        <img style="border: 0px solid; width: 1200px" alt="" src="fgco2_year_{RUN}.svg"/>
+        <br/><br/>
+        -->
+
+        <img style="border: 0px solid; width: 1200px" alt="" src="fgco2_p4z_year_{RUN}.svg"/>
+        <br/><br/>
+                
+	<!--
         <img style="border: 0px solid; width: 1200px" alt="" src="rivsed_p4z_year_{RUN}.svg"/>
-        <br/><br/><br/>
+        <br/><br/>
         
         <img style="border: 0px solid; width: 1200px" alt="" src="corr_p4z_year_{RUN}.svg"/>
-        <br/><br/><br/>
-        
+        <br/><br/>
+        -->
 
         </div>
 
 	<hr>
 
-        <br/><br/>
-        
-        <big><big><b>Drift:</b></big></big> <a href="#" id="toggle_drift" >Show/hide</a>
-
+        <big><big><b>Monthly variables:</b></big></big> <a href="#" id="toggle_month" >Show/hide</a>
         <br/><br/>
 
-	<div id="div_drift">
+	<div id="div_month">
 
-        <img style="border: 0px solid; width: 1200px" alt="" src="cLand_year_{RUN}.svg"/>
-        <br/><br/><br/>
+        <div style="{DISPLAY_TM5}">
+	<big><b>Atmosphere</b></big>
+        <img style="border: 0px solid; width: 1200px" alt="" src="co2s_{RUN}.svg" />
+        <br/><br/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="cAtmos_{RUN}.svg" />
+        <br/><br/>
+        <img style="border: 0px solid; width: 1200px" alt="" src="co2mass_{RUN}.svg" />
+	<!--
+        <img style="border: 0px solid; width: 1200px" alt="" src="fco2fos_{RUN}.svg" />
+        <br/><br/> -->
+        </div>
         
-        <img style="border: 0px solid; width: 1200px" alt="" src="cOcean_year_{RUN}.svg"/>
-        <br/><br/><br/>
-                
-        <img style="border: 0px solid; width: 1200px" alt="" src="cLand_year_drift_{RUN}.svg"/>
-        <br/><br/><br/>
+	<big><b>Ocean</b></big>
+        <img style="border: 0px solid; width: 1200px" alt="" src="fgco2_{RUN}.svg"/>
+        <br/><br/>
         
-        <img style="border: 0px solid; width: 1200px" alt="" src="cOcean_year_drift_{RUN}.svg"/>
-        <br/><br/><br/>
-                
+	<big><b>Land</b></big>
+        <img style="border: 0px solid; width: 1200px" alt="" src="cLand1_{RUN}.svg"/>
+        <br/><br/>
+
+        <img style="border: 0px solid; width: 1200px" alt="" src="cLand_{RUN}.svg"/>
+        <br/><br/>
+        
+        <img style="border: 0px solid; width: 1200px" alt="" src="fco2nat_{RUN}.svg"/>
+        <br/><br/>
+        
+        <img style="border: 0px solid; width: 1200px" alt="" src="fco2antt_{RUN}.svg"/>
+        <br/><br/>
+        
+        <img style="border: 0px solid; width: 1200px" alt="" src="fCLandToOcean_{RUN}.svg"/>
+        <br/><br/>
+        
+        <img style="border: 0px solid; width: 1200px" alt="" src="nep_{RUN}.svg"/>
+        <br/><br/>
+        
+        <img style="border: 0px solid; width: 1200px" alt="" src="nbp_{RUN}.svg"/>
+        <br/><br/>
+        
+        <img style="border: 0px solid; width: 1200px" alt="" src="npp_{RUN}.svg"/>
+        <br/><br/>
+        
+        <img style="border: 0px solid; width: 1200px" alt="" src="gpp_{RUN}.svg"/>
+        <br/><br/>
+                        
         </div>
 
 	<hr>
 
         <br/><br/>
-        
-        <big><big><b>Drift a249:</b></big></big> <a href="#" id="toggle_drift_a249" >Show/hide</a>
-
-        <br/><br/>
-
-	<div id="div_drift">
-
-        <img style="border: 0px solid; width: 1200px" alt="" src="cLand_year_test.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px" alt="" src="cOcean_year_test.svg"/>
-        <br/><br/><br/>
-                
-        <img style="border: 0px solid; width: 1200px" alt="" src="cLand_year_drift_test.svg"/>
-        <br/><br/><br/>
-        
-        <img style="border: 0px solid; width: 1200px" alt="" src="cOcean_year_drift_test.svg"/>
-        <br/><br/><br/>
-                
-        </div>
-	
-	<hr>
-
-
-        <br/><br/><br/>
-
 
         </center>        
 
@@ -182,6 +241,12 @@
 	  document.getElementById('div_month').style.display = '';
 	  else
 	  document.getElementById('div_month').style.display = 'none';
+	  });
+	  document.getElementById("toggle_other").addEventListener("click", function() {
+	  if ( document.getElementById('div_other').style.display == 'none' )
+	  document.getElementById('div_other').style.display = '';
+	  else
+	  document.getElementById('div_other').style.display = 'none';
 	  });
 	  document.getElementById("toggle_year").addEventListener("click", function() {
 	  if ( document.getElementById('div_year').style.display == 'none' )

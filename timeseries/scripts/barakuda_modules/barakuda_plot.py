@@ -1492,7 +1492,6 @@ def plot_1d_ann(VTy, VDy, cfignm='fig', dt_year=5, cyunit='', ctitle='',
     #y1 = int(min(VTy)-0.5)
     #y2 = int(max(VTy)+0.5)
     y1 = int(min(VTy))
-    #y2 = int(max(VTy)+1)
     y2 = int(max(VTy))
 
     #mean_val = nmp.mean(VDy)
@@ -1508,7 +1507,6 @@ def plot_1d_ann(VTy, VDy, cfignm='fig', dt_year=5, cyunit='', ctitle='',
     else:
         plt.axis([y1, y2, ymin,     ymax])
         if dy != 0: plt.yticks( nmp.arange(trunc(ymin+0.5), trunc(ymax)+dy, dy) )
-
 
     y_formatter = mpl.ticker.ScalarFormatter(useOffset=False)
     ax.yaxis.set_major_formatter(y_formatter)
@@ -1573,7 +1571,8 @@ def plot_1d_ann_drift(VTy, VDy, cfignm='fig', dt_year=5, cyunit='', ctitle='',
     ax = plt.axes(AXES_TS)
 
     #plt.plot(VTy, VDy_drift1, '.', color='gray', markersize=1, label='1-yr drift' )
-    plt.plot(VTy, VDy_drift1, '.', color='gray', markersize=2, label='1-yr drift' )
+#    plt.plot(VTy, VDy_drift1, '.', color='gray', markersize=2, label='1-yr drift' )
+    plt.plot(VTy, VDy_drift1, '.', color='gray', markersize=5, label='1-yr drift' )
     if plot_drift20:
         plt.plot(VTy, VDy_drift20, 'purple', linewidth=0.5, label='20-yr drift')
     if plot_drift100:
@@ -1624,6 +1623,74 @@ def plot_1d_ann_drift(VTy, VDy, cfignm='fig', dt_year=5, cyunit='', ctitle='',
     plt.close(1)
 
 
+def plot_1d_ann_multi(VTy, VDy_multi, v_var_names, VDy_multi_var_names, cfignm='fig', dt_year=5, cyunit='', ctitle='',
+                      ymin=0, ymax=0, dy=0, mnth_col='b', plt_m03=False, plt_m09=False,
+                      cfig_type='png', l_tranparent_bg=True,
+                      plot_drift=None ):
+
+    font_ttl, font_ylb, font_clb = __font_unity__()
+
+    Nt2 = len(VTy)
+
+    if len(VTy) != len(VDy_multi[0,:]): print 'ERROR: plot_1d_mon_ann.barakuda_plot => VTy and VDy do not agree in size'; sys.exit(0)
+
+    fig = plt.figure(num = 1, figsize=FIG_SIZE_TS, facecolor='w', edgecolor='k')
+
+    ax = plt.axes(AXES_TS)
+
+    #print(str( v_var_names))
+    print(str(  VDy_multi_var_names))
+    for cv in VDy_multi_var_names:
+        if not cv in v_var_names:
+            print 'ERROR: plot_1d_ann_multi.barakuda_plot.py => var '+str(cv)+' not found!'
+            sys.exit(1)
+            continue
+        jv=v_var_names.index(cv)
+        #cv  = v_var_names[jv]
+        plt.plot(VTy, VDy_multi[jv,:], '-', markersize=5, label=cv )
+
+    #y1 = int(min(VTy)-0.5)
+    #y2 = int(max(VTy)+0.5)
+    y1 = int(min(VTy))
+    #y2 = int(max(VTy)+1)
+    y2 = int(max(VTy))
+
+    if plot_drift is not None:
+        x_vals = nmp.array([y1,y2])
+        #y_vals = -y1 + plot_drift * x_vals
+        y_vals = nmp.array([0,(y2-y1)*plot_drift])
+        plt.plot(x_vals, y_vals, 'k--')
+        plt.plot(x_vals, -y_vals, 'k--')
+
+    plt.legend(loc='upper left', shadow=False, fancybox=False)
+
+    #plt.axis([y1, y2, ymin,     ymax])
+    if dy != 0: plt.yticks( nmp.arange(trunc(ymin+0.5), trunc(ymax)+dy, dy) )
+    ax.set(xlim=(y1,y2))
+
+    y_formatter = mpl.ticker.ScalarFormatter(useOffset=False)
+    ax.yaxis.set_major_formatter(y_formatter)
+
+
+    plt.xticks( nmp.arange(y1, y2+dt_year, dt_year) )
+
+    #BUG?:
+    locs, labels = plt.xticks() ; jl=0; newlabels = []
+    for ll in locs: newlabels.append(str(int(locs[jl]))); jl=jl+1
+    plt.xticks(locs,newlabels)
+    #BUG?.
+
+    ax.grid(color='k', linestyle='-', linewidth=0.2)
+
+    plt.ylabel('('+cyunit+')', **font_ylb)
+
+    plt.title(ctitle)
+    
+    cf_fig = cfignm+'.'+cfig_type
+    
+    plt.savefig(cf_fig, dpi=DPI_TS, orientation='portrait', transparent=l_tranparent_bg)
+
+    plt.close(1)
 
 
 

@@ -108,10 +108,13 @@ export ccycle=${ECE3_POSTPROC_CCYCLE:-0}
 export ccycle_pisces=${ECE3_POSTPROC_CCYCLE_PISCES:-0}
 export ccycle_lpjg=${ECE3_POSTPROC_CCYCLE_LPJG:-0}
 export ccycle_tm5=${ECE3_POSTPROC_CCYCLE_TM5:-0}
+export ccycle_emiss_fixyear=${ECE3_POSTPROC_CCYCLE_EMISS_FIXYEAR:-0}
 
 
 cd $ECE3_POSTPROC_TOPDIR/timeseries
 
+# TMP ET
+#if false ; then
 
 ###########################
 # -- Atmospheric timeseries
@@ -136,6 +139,9 @@ then
     echo "*II* Plot Oceanic TimeSeries"
     ./monitor_ocean.sh -R $EXPID -e
 fi
+
+#TMP ET
+#fi
 
 #######################
 # -- Carbon cycle timeseries
