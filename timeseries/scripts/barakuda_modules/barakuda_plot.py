@@ -1639,7 +1639,7 @@ def plot_1d_ann_multi(VTy, VDy_multi, v_var_names, VDy_multi_var_names, cfignm='
     ax = plt.axes(AXES_TS)
 
     #print(str( v_var_names))
-    print(str(  VDy_multi_var_names))
+    #print(str(  VDy_multi_var_names))
     for cv in VDy_multi_var_names:
         if not cv in v_var_names:
             print 'ERROR: plot_1d_ann_multi.barakuda_plot.py => var '+str(cv)+' not found!'

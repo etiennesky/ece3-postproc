@@ -42,6 +42,8 @@ for row in csv_reader:
 csv_file_in.close()
 csv_file_out.close()
 
+print(count)
+
 # create netcdf file with time dimension
 # https://iescoders.com/writing-netcdf4-data-in-python/
 ncfile = Dataset(ofile_nc,mode='w',format='NETCDF3_CLASSIC') 
@@ -77,7 +79,8 @@ var_corr.units = 'Pg C'
 var_corr.long_name = 'C mass damping flux (PISCES)'
 
 # initialize data and time arrays
-ntimes = count + 1 #add one for the first chunk
+#ntimes = count + 1 #add one for the first chunk
+ntimes = count
 data_time = np.zeros(ntimes)
 data_totc = np.zeros(ntimes)
 data_rivsed = np.zeros(ntimes)
@@ -88,41 +91,14 @@ data_corr = np.zeros(ntimes)
 # open csv file and to get # of rows
 csv_file_in=open(ofile_csv)
 csv_reader = csv.DictReader(csv_file_in, delimiter=' ', skipinitialspace=True)
-#csv_file_in.seek(0)
-#csv_reader = csv.DictReader(csv_file_in, delimiter=' ', skipinitialspace=True)
-#print(dir(csv_reader))
+
 i=0
 for row in csv_reader:
-    #print type(row)
-    #print row
+
     date1 = datetime.strptime(row['date'], '%Y%m%d')
-#        print("{0.year:4d}{0.month:02d}{0.day:02d}".format(date1))
-#        print("{0.year:4d}{0.month:02d}{0.day:02d}".format(date2))
-    #row['date'] = "{0.year:4d}{0.month:02d}{0.day:02d}".format(date2)
-    #print row
-    #print (row['date']+' - '+row['TotC-t1-PgC'])
-
-    #data_time[i] = "{0.year:4d}{0.month:02d}{0.day:02d}".format(date2) #row['date']
-    #data_time[i] = date2 #row['date']
-
-    # this assumes yearly chunks, adapt if necessary
-    if (i==0):
-        #date0 = datetime(date1.year,1,1)
-        date0 = datetime(date1.year-1,1,1)
-        data_time[i] = date2num(date0,units=var_time.units,calendar=var_time.calendar)
-        data_totc[i] = row['TotC-t1-PgC']
-        data_rivsed[i] = 0 #row['riv+sed-PgC']
-        data_fgco2[i] = 0 #row['fgco2-PgC']
-        data_corr[i] = 0 #row['corr-PgC']
-        i=i+1
-
-    # adjust date by + 1 day
-    #date2 = date1+timedelta(days=1)
-    ts = date2num(datetime(date1.year,1,1),units=var_time.units,calendar=var_time.calendar)
-    if data_time[i-1] == ts:
-        i=i-1
-    data_time[i] = ts
-    data_totc[i] = row['TotC-t2-PgC']
+    # this assumes yearly chunks, adapt if necessary - convert yyyy1231 to yyyy0101
+    data_time[i] = date2num(datetime(date1.year,1,1),units=var_time.units,calendar=var_time.calendar)
+    data_totc[i] = row['TotC-t1-PgC']
     data_rivsed[i] = row['riv+sed-PgC']
     data_fgco2[i] = row['fgco2-PgC']
     data_corr[i] = row['corr-PgC']

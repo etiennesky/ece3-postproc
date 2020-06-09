@@ -173,6 +173,7 @@ jyear=${YEAR_INI}
 # monthly and yearly vars, which we processed in ccycle_post.sh
 monvars_state="" #monthly files, state variables
 monvars_flux="" #monthly files, flux variables
+monvars_flux2="" #diag fluxes
 yearvars="" #yearly files
 
 if [ ${ccycle_lpjg} == 1 ] ; then
@@ -181,8 +182,13 @@ if [ ${ccycle_lpjg} == 1 ] ; then
     yearvars+=" cLandYr cFluxYr"
 fi
 [ ${ccycle_tm5} == 1 ] && monvars_state+=" co2s co2mass cAtmos" && yearvars+=" co2sYr co2massYr cAtmosYr"
-[ ${ccycle_tm5} == 1 ] && [ ${ccycle_emiss_fixyear} == 0 ] && monvars_flux+=" fco2fos"
+[ ${ccycle_tm5} == 1 ] && monvars_flux+=" fco2fos"
 [ ${ccycle_pisces} == 1 ] && monvars_flux+=" fgco2"
+
+# sanity check since we now assume that both lpjg and pisces are required
+if [ ${ccycle_pisces} != 1 ] || [ ${ccycle_lpjg} != 1 ] ; then echo "ERROR! monitor_ccycle.sh requires both lpjg and pisces activated!" ; exit 1 ; fi
+
+[ ${ccycle_lpjg} == 1 ] && [ ${ccycle_pisces} == 1 ] && yearvars+=" cGeoYr"
 
 
 # should missing values in the first and last years of the yearly timeseries be extrapolated?
@@ -323,8 +329,9 @@ if [ ${IPREPHTML} -eq 0 ]; then
     if [ ${ccycle_pisces} == 1 ] ; then
 	#cp ${DATADIR}/Post_????/${RUN}_${YEAR_END}_ocean_carbon.nc ${SUPA_FILE}
 	tmpf=${DATADIR}/../year/Post_${YEAR_END}/${RUN}_${YEAR_END}_ocean.carbon
-	${PYTHON} ${HERE}/scripts/ocean_carbon_csv2nc.py ${tmpf} ${tmpf}.nc ${DIAG_D}/diags_pisces_${RUN}.csv
+	#${PYTHON} ${HERE}/scripts/ocean_carbon_csv2nc.py ${tmpf} ${tmpf}.nc ${DIAG_D}/diags_pisces_${RUN}.csv
 	cdo seldate,${tmp_year_ini}-01-01,${YEAR_END}-12-31 ${tmpf}.nc ${SUPA_FILE_PISCES}
+	cp ${tmpf}.csv ${DIAG_D}/diags_pisces_${RUN}.csv
 
 	# TMP ET test the drift plot with data from a249
 	#if [ -f "/gpfs/scratch/bsc32/bsc32051/pub/a249/drift_a249.csv" ] ; then
@@ -339,13 +346,13 @@ if [ ${IPREPHTML} -eq 0 ]; then
     rm -f tmp*.nc
     cdo -O settunits,seconds -settaxis,${tmp_year_ini}-01-15,00:00:00,month -settunits,month ${SUPA_FILE} ${SUPA_FILE_MON}
 
-    for cvar in ${monvars_state[*]}; do
+    for cvar in ${monvars_state}; do
 	$cdo -selmon,1 -selvar,${cvar} ${SUPA_FILE_MON} tmp_m1_${cvar}.nc
 	$cdo -selmon,12 -selvar,${cvar} ${SUPA_FILE_MON} tmp_m12_${cvar}.nc
 	#$cdo date,${YEAR_INI}-01-01 -yearmean -selvar,${cvar} ${SUPA_FILE_MON} tmp_mean_${cvar}.nc
 	$cdo -setmon,1 -setday,1 -yearmean -selvar,${cvar} ${SUPA_FILE_MON} tmp_mean_${cvar}.nc
     done
-    for cvar in ${monvars_flux[*]}; do
+    for cvar in ${monvars_flux}; do
 	#$cdo -setdate,${YEAR_INI}-01-01 -yearsum -selvar,${cvar} ${SUPA_FILE_MON} tmp_flux_${cvar}.nc
 	$cdo -setmon,1 -setday,1 -yearsum -selvar,${cvar} ${SUPA_FILE_MON} tmp_flux_${cvar}.nc
 	#$cdo -yearsum -selvar,${cvar} ${SUPA_FILE_MON} tmp_flux_${cvar}.nc
@@ -362,7 +369,7 @@ if [ ${IPREPHTML} -eq 0 ]; then
     # first get complete yearly timeseries for each var from the hiresclim yearly data
     rm -f tmp_*.nc
 
-    for cvar in ${yearvars[*]}; do
+    for cvar in ${yearvars}; do
         cdo -O mergetime ${DATADIR}/../year/Post_????/${RUN}_????_${cvar}.nc tmp_${cvar}.nc
 	if [ ${YEAR_I} != ${YEAR_END} ] ; then
 	    cdo splityear tmp_${cvar}.nc tmp_${cvar}_
@@ -395,38 +402,41 @@ if [ ${IPREPHTML} -eq 0 ]; then
 
 
     # get some variables from special pisces diags
-    if [ ${ccycle_pisces} == 1 ] ; then
+    #if [ ${ccycle_pisces} == 1 ] ; then
 	for v in cOceanYr fgco2_p4z rivsed_p4z corr_p4z ; do
 	    cdo selvar,${v} ${SUPA_FILE_PISCES} tmp_${v}.nc
 	done
-    fi
-
-    # create the cTotal variable by adding cAtmos cLand and cOcean
-    if [ ${ccycle_lpjg} == 1 ] && [ ${ccycle_tm5} == 1 ] && [ ${ccycle_pisces} == 1 ] ; then
-	cdo -O -chvar,cOceanYr,cTotalYr -add tmp_cOceanYr.nc -add tmp_cLandYr.nc tmp_cAtmosYr.nc tmp_cTotalYr.nc
-	ncatted -O -a long_name,cTotalYr,m,c,"Total Carbon in Atmosphere, Land and Ocean" tmp_cTotalYr.nc
-    elif [ ${ccycle_lpjg} == 1 ] && [ ${ccycle_pisces} == 1 ] ; then
-	cdo -O -chvar,cOceanYr,cTotalYr -add tmp_cOceanYr.nc tmp_cLandYr.nc tmp_cTotalYr.nc
-	ncatted -O -a long_name,cTotalYr,m,c,"Total Carbon in Land and Ocean" tmp_cTotalYr.nc
-    else
-	echo "Not producing cTotalYr variable, modify monitor_ccycle.sh for your config"
-    fi
-
-    # create the fTotal variable by adding fco2nat fco2antt fgco2 [fco2fos]
-    # TODO what about the fCLandToOcean ?
+    #fi
+    # get flux variables
     for cvar in fco2nat fco2antt fgco2 fCLandToOcean; do
 	cdo selvar,${cvar} ${SUPA_FILE_FLUX} tmp_${cvar}.nc
     done
-    if [ ${ccycle_lpjg} == 1 ] && [ ${ccycle_tm5} == 1 ] && [ ${ccycle_emiss_fixyear} == 0 ] && [ ${ccycle_pisces} == 1 ] ; then
+
+    # compute model-specific fluxes (relative to atmosphere)
+    cdo -O -chvar,fco2antt,fLandYr -add tmp_fco2antt.nc tmp_fco2nat.nc tmp_fLandYr.nc
+    ncatted -O -a long_name,fLandYr,m,c,"Total C flux from Land" tmp_fLandYr.nc
+    cdo -O -chvar,fgco2,fOceanYr -mulc,-1 tmp_fgco2.nc tmp_fOceanYr.nc
+    ncatted -O -a long_name,fOceanYr,m,c,"Total C flux from Ocean" tmp_fOceanYr.nc
+    if [ ${ccycle_tm5} == 1 ] ; then
 	cvar=fco2fos ; cdo selvar,${cvar} ${SUPA_FILE_FLUX} tmp_${cvar}.nc
-	cdo -O -chvar,fgco2_p4z,fTotal -add tmp_fgco2_p4z.nc -add tmp_fco2fos.nc -add tmp_fco2antt.nc tmp_fco2nat.nc tmp_fTotal.nc
-	ncatted -O -a long_name,fTotal,m,c,"Total Fluxes" tmp_fTotal.nc
-    elif [ ${ccycle_lpjg} == 1 ] && [ ${ccycle_pisces} == 1 ] ; then
-	cdo -O -chvar,fgco2_p4z,fTotal -add tmp_fgco2_p4z.nc -add tmp_fco2antt.nc tmp_fco2nat.nc tmp_fTotal.nc
-	ncatted -O -a long_name,fTotal,m,c,"Total Fluxes" tmp_fTotal.nc
+	cdo -O -chvar,fCLandToOcean,fGeoYr -add -mulc,-1 tmp_fCLandToOcean.nc -add tmp_fco2fos.nc tmp_rivsed_p4z.nc tmp_fGeoYr.nc
     else
-	echo "Not producing fTotal variable, modify monitor_ccycle.sh for your config"
+	cdo -O -chvar,fCLandToOcean,fGeoYr -add -mulc,-1 tmp_fCLandToOcean.nc tmp_rivsed_p4z.nc tmp_fGeoYr.nc
     fi
+    ncatted -O -a long_name,fGeoYr,m,c,"Total C flux from Geology" tmp_fGeoYr.nc
+    
+
+    # create the cTotal variable by adding cAtmos cLand cOcean and fGeo(t-1)
+    if [ ${ccycle_tm5} == 1 ] ; then
+	cdo -O -chvar,cOceanYr,cTotalYr -add tmp_cOceanYr.nc -add tmp_cLandYr.nc -add tmp_cAtmosYr.nc tmp_cGeoYr.nc tmp_cTotalYr.nc
+	#cdo -O -chvar,cOceanYr,cTotalYr -add tmp_cOceanYr.nc -add tmp_cLandYr.nc tmp_cAtmosYr.nc tmp_cTotalYr.nc
+	ncatted -O -a long_name,cTotalYr,m,c,"Total Carbon in Atmosphere, Land, Ocean and Geo" tmp_cTotalYr.nc
+    else
+	cdo -O -chvar,cOceanYr,cTotalYr -add tmp_cOceanYr.nc -add tmp_cLandYr.nc tmp_cGeoYr.nc tmp_cTotalYr.nc
+	#cdo -O -chvar,cOceanYr,cTotalYr -add tmp_cOceanYr.nc tmp_cLandYr.nc tmp_cTotalYr.nc
+	ncatted -O -a long_name,cTotalYr,m,c,"Total Carbon in Land, Ocean and Geo" tmp_cTotalYr.nc
+    fi
+
 
     # merge all variables in one file
     cdo merge tmp_*.nc ${SUPA_FILE_YEAR}

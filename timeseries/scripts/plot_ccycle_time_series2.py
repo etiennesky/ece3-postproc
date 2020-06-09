@@ -60,20 +60,20 @@ ittic = bt.iaxe_tick(nbr,10)
 #v_var_names = [ 'cLand' , 'co2s', 'co2mass' ]
 #v_var_names = [ 'cOcean', 'fgco2', 'rivsed', 'corr' ]
 
+vars_fluxes_invert = [ 'fgco2', 'rivsed_p4z' ]
 vars_excluded = [ 'time', 'lat', 'lon', 'depth', 'Year' ]
-vars_fluxes = [ 'fco2nat', 'fco2antt', 'fgco2', 'fCLandToOcean', 'fTotal' ]
+vars_fluxes = [ 'fco2nat', 'fco2antt', 'fgco2-', 'fCLandToOcean', 'rivsed_p4z-' ]
+vars_fluxes2 = [ 'fLandYr', 'fOceanYr', 'fGeoYr' ]
 vars_cpool = [ 'cLand', 'cVeg', 'cProduct', 'cLitter', 'cSoil' ]
 if ccycle_tm5:
-    vars_drift = [ 'cLandYr', 'cOceanYr', 'cAtmosYr', 'cTotalYr' ]
-    vars_drift_cumm = [ 'cLandYr', 'cOceanYr', 'cAtmosYr', 'cTotalYr' ]
-    print("TM5!!!!")
+    vars_drift = [ 'cLandYr', 'cOceanYr', 'cAtmosYr', 'cGeoYr', 'cTotalYr' ]
+    vars_drift_cumm = vars_drift
     if ccycle_emiss_fixyear == "0":
-        print("fix!!")
-        vars_drift_cumm.append('fco2fos')
+    #    vars_drift_cumm.append('fco2fos')
         vars_fluxes.append('fco2fos')
 else:
-    vars_drift = [ 'cLandYr', 'cOceanYr', 'cTotalYr' ]
-    vars_drift_cumm = [ 'cLandYr', 'cOceanYr', 'cTotalYr' ]
+    vars_drift = [ 'cLandYr', 'cOceanYr', 'cGeoYr', 'cTotalYr' ]
+    vars_drift_cumm = vars_drift
 # cAtmos cFlux cLand cLand1 cOcean cTotal co2mass co2s fco2antt fco2fos fco2nat fgco2 nbp nep
 
 
@@ -115,12 +115,17 @@ for jv in range(nbvar):
         v_var_lngnm[jv] = id_clim.variables[v_var_names[jv]].long_name
     except AttributeError:
         v_var_lngnm[jv] = v_var_names[jv]
+
     try:
         missval = id_clim.variables[v_var_names[jv]].missing_value
     except AttributeError:
         missval = None
     if not missval is None:
         XX[jv,:]  = nmp.ma.masked_where(XX[jv,:]==missval, XX[jv,:])
+
+    if v_var_names[jv] in vars_fluxes_invert:
+        XX[jv,:] = - XX[jv,:]
+        v_var_names[jv] = v_var_names[jv] + u"-" 
 
     # compute cummulative values and cumulative drift
     if nbr > 1:
@@ -152,7 +157,7 @@ if plot_drift:
     cfn  = 'fluxes_year_'+CRUN
     ct = CRUN+" / fluxes"
     cyunit='Pg C'
-    print '   Creating figure '+cfn
+    #print '   Creating figure '+cfn
     bp.plot_1d_ann_multi(vtime[:], XX, v_var_names, vars_fluxes, cfignm=cfn, dt_year=ittic,
                           cyunit=cyunit, ctitle = ct,
                           cfig_type='svg', l_tranparent_bg=False)
@@ -160,15 +165,39 @@ if plot_drift:
     cfn  = 'fluxes_cumm_year_'+CRUN
     ct = CRUN+" / cummulative fluxes"
     cyunit='Pg C'
-    print '   Creating figure '+cfn
+    #print '   Creating figure '+cfn
     bp.plot_1d_ann_multi(vtime[:], XX_cumm, v_var_names, vars_fluxes, cfignm=cfn, dt_year=ittic,
                           cyunit=cyunit, ctitle = ct,
                           cfig_type='svg', l_tranparent_bg=False)
 
+    cfn  = 'fluxes2_year_'+CRUN
+    ct = CRUN+" / fluxes2"
+    cyunit='Pg C'
+    #print '   Creating figure '+cfn
+    bp.plot_1d_ann_multi(vtime[:], XX, v_var_names, vars_fluxes2, cfignm=cfn, dt_year=ittic,
+                          cyunit=cyunit, ctitle = ct,
+                          cfig_type='svg', l_tranparent_bg=False)
+
+    cfn  = 'fluxes2_cumm_year_'+CRUN
+    ct = CRUN+" / cummulative fluxes2"
+    cyunit='Pg C'
+    #print '   Creating figure '+cfn
+    bp.plot_1d_ann_multi(vtime[:], XX_cumm, v_var_names, vars_fluxes2, cfignm=cfn, dt_year=ittic,
+                          cyunit=cyunit, ctitle = ct,
+                          cfig_type='svg', l_tranparent_bg=False)
+
+    cfn  = 'carbon_pools_year_'+CRUN
+    ct = CRUN+" / carbon pools"
+    cyunit='Pg C'
+    #print '   Creating figure '+cfn
+    bp.plot_1d_ann_multi(vtime[:], XX, v_var_names, vars_drift, cfignm=cfn, dt_year=ittic,
+                          cyunit=cyunit, ctitle = ct,
+                          cfig_type='svg', l_tranparent_bg=False, plot_drift=0.1)
+
     cfn  = 'drift_cumm_year_'+CRUN
     ct = CRUN+" / cummulative drift"
     cyunit='Pg C'
-    print '   Creating figure '+cfn
+    #print '   Creating figure '+cfn
     bp.plot_1d_ann_multi(vtime[:], XX_drift, v_var_names, vars_drift_cumm, cfignm=cfn, dt_year=ittic,
                           cyunit=cyunit, ctitle = ct,
                           cfig_type='svg', l_tranparent_bg=False, plot_drift=0.1)
@@ -199,7 +228,7 @@ for jv in range(nbvar):
     ct = CRUN+' / '+cv+" : " +cln
     ct_drift = CRUN+' / '+cv+" drift"
 
-    print '   Creating figure '+cfn
+    #print '   Creating figure '+cfn
 
     # Annual data
     #VY, FY = bt.monthly_2_annual(vtime[:], XX[jv,:])
