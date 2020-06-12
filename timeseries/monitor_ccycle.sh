@@ -188,7 +188,7 @@ fi
 # sanity check since we now assume that both lpjg and pisces are required
 if [ ${ccycle_pisces} != 1 ] || [ ${ccycle_lpjg} != 1 ] ; then echo "ERROR! monitor_ccycle.sh requires both lpjg and pisces activated!" ; exit 1 ; fi
 
-[ ${ccycle_lpjg} == 1 ] && [ ${ccycle_pisces} == 1 ] && yearvars+=" cGeoYr"
+[ ${ccycle_lpjg} == 1 ] && [ ${ccycle_pisces} == 1 ] && yearvars+=" fGeoYr cGeoYr"
 
 
 # should missing values in the first and last years of the yearly timeseries be extrapolated?
@@ -408,7 +408,7 @@ if [ ${IPREPHTML} -eq 0 ]; then
 	done
     #fi
     # get flux variables
-    for cvar in fco2nat fco2antt fgco2 fCLandToOcean; do
+    for cvar in fco2nat fco2antt fgco2 fCLandToOcean fco2fos; do
 	cdo selvar,${cvar} ${SUPA_FILE_FLUX} tmp_${cvar}.nc
     done
 
@@ -417,14 +417,6 @@ if [ ${IPREPHTML} -eq 0 ]; then
     ncatted -O -a long_name,fLandYr,m,c,"Total C flux from Land" tmp_fLandYr.nc
     cdo -O -chvar,fgco2,fOceanYr -mulc,-1 tmp_fgco2.nc tmp_fOceanYr.nc
     ncatted -O -a long_name,fOceanYr,m,c,"Total C flux from Ocean" tmp_fOceanYr.nc
-    if [ ${ccycle_tm5} == 1 ] ; then
-	cvar=fco2fos ; cdo selvar,${cvar} ${SUPA_FILE_FLUX} tmp_${cvar}.nc
-	cdo -O -chvar,fCLandToOcean,fGeoYr -add -mulc,-1 tmp_fCLandToOcean.nc -add tmp_fco2fos.nc tmp_rivsed_p4z.nc tmp_fGeoYr.nc
-    else
-	cdo -O -chvar,fCLandToOcean,fGeoYr -add -mulc,-1 tmp_fCLandToOcean.nc tmp_rivsed_p4z.nc tmp_fGeoYr.nc
-    fi
-    ncatted -O -a long_name,fGeoYr,m,c,"Total C flux from Geology" tmp_fGeoYr.nc
-    
 
     # create the cTotal variable by adding cAtmos cLand cOcean and fGeo(t-1)
     if [ ${ccycle_tm5} == 1 ] ; then

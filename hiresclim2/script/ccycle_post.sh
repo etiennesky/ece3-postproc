@@ -368,39 +368,50 @@ for cvar in ${yearvars[*]}; do
     elif [ $cvar = "co2massYr" ] ; then
         cmor_table="day"
         oper=""
-	cmorvar="co2mass"
+        cmorvar="co2mass"
     elif [ $cvar = "cGeoYr" ] ; then
-	# cGeoYr is a special variable to track carbon leaving/entering the geological pool
-	# via fCLandToOcean fgco2 fco2fos 
-	if [ $year = $yref ] ; then
-	    vars=( $yearvars )
-	    v1=${vars[0]}
-	    $cdo -setdate,${year}-07-01 -setrtoc,-inf,inf,0 -chname,${v1},${cvar} ${out}_${v1}.nc ${out}_${cvar}.nc
-	    ncatted -O -a units,${cvar},m,c,"Pg C" ${out}_${cvar}.nc
-	    ncatted -O -a long_name,${cvar},m,c,"Total Carbon in Geo pool" ${out}_${cvar}.nc
-	    ncatted -O -a original_name,${cvar},d,c,"" ${out}_${cvar}.nc
-	    ncatted -O -a standard_name,${cvar},d,c,"" ${out}_${cvar}.nc
-	else
-	    y1=$(( year -1 ))
-	    out1=$OUTDIR0/year/Post_${y1}/${expname}_${y1}
-	    outm1=$OUTDIR0/mon/Post_${y1}/${expname}_${y1}
-	    $cdo -O -selvar,rivsed_p4z -selyear,${y1} ${out1}_ocean.carbon.nc tmp_rivsed_p4z.nc
-	    $cdo -O -yearsum ${outm1}_fCLandToOcean.nc tmp_fCLandToOcean.nc
-	    if [ ${ccycle_tm5} == 1 ] ; then
-		$cdo -O -yearsum ${outm1}_fco2fos.nc tmp_fco2fos.nc
-		#$cdo -setdate,${year}-07-01 -chvar,fCLandToOcean,${cvar} -add tmp_fCLandToOcean.nc -add -mulc,-1 tmp_fco2fos.nc -mulc,-1 -add tmp_rivsed_p4z.nc ${out1}_${cvar}.nc ${out}_${cvar}.nc
-		cdo_expr="cGeoYr=cGeoYr+fCLandToOcean-fco2fos-rivsed_p4z"
-	    else
-		#$cdo -setdate,${year}-07-01 -chvar,fCLandToOcean,${cvar} -add tmp_fCLandToOcean.nc -mulc,-1 -add tmp_rivsed_p4z.nc ${out1}_${cvar}.nc ${out}_${cvar}.nc
-		cdo_expr="cGeoYr=cGeoYr+fCLandToOcean-rivsed_p4z"
-	    fi
-	    $cdo merge tmp_*.nc ${out1}_${cvar}.nc tmp_merged.nc
-	    $cdo -setdate,${year}-07-01 -expr,${cdo_expr} tmp_merged.nc ${out}_${cvar}.nc
+        # fGeoYr and cGeoYr are special variables to track carbon leaving/entering the geological pool
+        # when running in c-driven they also include carbon going to the atmosphere
+        # this dhoul go in timeseries script, but it it easier here for the timeloop
 
-	    rm tmp_*.nc
-	fi
+        # first compute fGeoYr
+        if [ ${ccycle_tm5} == 1 ] ; then
+            tmpvars="fCLandToOcean fco2fos"
+            cdo_expr="fGeoYr=fCLandToOcean-rivsed_p4z-fco2fos"
+        else
+           tmpvars="fCLandToOcean fco2nat fco2antt fgco2"
+            cdo_expr="fGeoYr=fCLandToOcean+fco2nat+fco2antt-fgco2-rivsed_p4z"
+        fi
+        rm -f tmp_*.nc
+        $cdo -O -selvar,rivsed_p4z -selyear,${year} ${out}_ocean.carbon.nc tmp_rivsed_p4z.nc
+        outm=$OUTDIR/${expname}_${year}
+        for v in ${tmpvars} ; do
+            $cdo -O -yearsum ${outm}_${v}.nc tmp_${v}.nc
+        done
+        $cdo merge tmp_*.nc tmp_merged.nc
+        $cdo -setdate,${year}-07-01 -expr,${cdo_expr} tmp_merged.nc ${out}_fGeoYr.nc
+        rm -f tmp_*.nc
 
-	continue
+        # now compute cGeoYr
+        if [ $year = $yref ] ; then
+            $cdo -setrtoc,-inf,inf,0 -chname,fGeoYr,cGeoYr ${out}_fGeoYr.nc ${out}_cGeoYr.nc
+        else
+            y1=$(( year -1 ))
+            out1=$OUTDIR0/year/Post_${y1}/${expname}_${y1}
+            $cdo -setdate,${year}-07-01 -add ${out1}_cGeoYr.nc ${out1}_fGeoYr.nc ${out}_cGeoYr.nc
+        fi
+
+        # fix metadata
+        ncatted -O -a long_name,fGeoYr,m,c,"Total Carbon flux to Geo pool" ${out}_fGeoYr.nc
+        ncatted -O -a units,fGeoYr,m,c,"Pg C" ${out}_fGeoYr.nc
+        ncatted -O -a original_name,fGeoYr,d,c,"" ${out}_fGeoYr.nc
+        ncatted -O -a standard_name,fGeoYr,d,c,"" ${out}_fGeoYr.nc
+        ncatted -O -a long_name,cGeoYr,m,c,"Total Carbon in Geo pool" ${out}_cGeoYr.nc
+        ncatted -O -a units,cGeoYr,m,c,"Pg C" ${out}_cGeoYr.nc
+        ncatted -O -a original_name,cGeoYr,d,c,"" ${out}_cGeoYr.nc
+        ncatted -O -a standard_name,cGeoYr,d,c,"" ${out}_cGeoYr.nc
+
+        continue
     else
         echo "undefined var $cvar"
         exit 1
