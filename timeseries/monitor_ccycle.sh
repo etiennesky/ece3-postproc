@@ -408,9 +408,10 @@ if [ ${IPREPHTML} -eq 0 ]; then
 	done
     #fi
     # get flux variables
-    for cvar in fco2nat fco2antt fgco2 fCLandToOcean fco2fos; do
+    for cvar in fco2nat fco2antt fgco2 fCLandToOcean; do
 	cdo selvar,${cvar} ${SUPA_FILE_FLUX} tmp_${cvar}.nc
     done
+    [ ${ccycle_tm5} == 1 ] && cdo selvar,fco2fos ${SUPA_FILE_FLUX} tmp_fco2fos.nc
 
     # compute model-specific fluxes (relative to atmosphere)
     cdo -O -chvar,fco2antt,fLandYr -add tmp_fco2antt.nc tmp_fco2nat.nc tmp_fLandYr.nc
